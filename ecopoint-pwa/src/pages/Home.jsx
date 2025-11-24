@@ -1,22 +1,30 @@
 import { useEffect, useState } from 'react';
 import { getTransactionSummary, getHistory } from '../services/transactionService'; 
+import { getProfile } from '../services/profileService'; // 1. Import Service Profile
 import { Wallet, ArrowUpRight, Leaf, History, ChevronRight, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import HomeChart from '../components/HomeChart';
-import PageTransition from '../components/PageTransition'; // Import Animasi
+import PageTransition from '../components/PageTransition';
 
 export default function Home() {
   const [stats, setStats] = useState({ totalPoints: 0 });
   const [chartData, setChartData] = useState([]);
+  const [profile, setProfile] = useState(null); // 2. State untuk Profile
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // 3. Ambil Data Transaksi & Profile sekaligus
         const summary = await getTransactionSummary();
         setStats(summary);
+        
         const history = await getHistory();
         processChartData(history);
+
+        const profileData = await getProfile();
+        setProfile(profileData);
+
       } catch (error) {
         console.error("Gagal ambil data:", error);
       } finally {
@@ -47,11 +55,20 @@ export default function Home() {
         {/* Header User */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-xl font-bold text-gray-800">Halo, EcoWarrior 👋</h1>
+            {/* Bonus: Nama User juga jadi dinamis */}
+            <h1 className="text-xl font-bold text-gray-800">
+              Halo, {profile?.full_name ? profile.full_name.split(' ')[0] : 'EcoWarrior'} 👋
+            </h1>
             <p className="text-xs text-gray-500">Ayo selamatkan bumi hari ini!</p>
           </div>
+          
           <Link to="/profile" className="w-10 h-10 bg-green-100 rounded-full overflow-hidden border-2 border-white shadow-sm">
-            <img src="https://ui-avatars.com/api/?name=User&background=16a34a&color=fff" alt="Profile" />
+            {/* 4. Gambar sekarang mengambil dari profile.avatar_url */}
+            <img 
+              src={profile?.avatar_url || "https://ui-avatars.com/api/?name=User&background=16a34a&color=fff"} 
+              alt="Profile" 
+              className="w-full h-full object-cover"
+            />
           </Link>
         </div>
 
