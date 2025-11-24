@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import PageTransition from '../components/PageTransition';
 
 export default function Profile() {
-  const navigate = useNavigate(); // Variabel ini sekarang akan terpakai
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState({ totalWeight: 0, totalTransactions: 0, totalPoints: 0 });
   const [loading, setLoading] = useState(true);
@@ -25,19 +25,23 @@ export default function Profile() {
     load();
   }, []);
 
+  // --- PERBAIKAN LOGIKA LEVEL (SINKRON DENGAN ACHIEVEMENTS) ---
   const getLevel = (points) => {
-    if (points > 1000) return { name: 'Earth Guardian', color: 'bg-purple-100 text-purple-700' };
-    if (points > 500) return { name: 'Eco Warrior', color: 'bg-green-100 text-green-700' };
-    return { name: 'Pemula', color: 'bg-gray-100 text-gray-600' };
+    if (points >= 5000) return { name: 'Legendary', color: 'bg-indigo-100 text-indigo-700 border border-indigo-200' };
+    if (points >= 2000) return { name: 'Earth Guardian', color: 'bg-purple-100 text-purple-700 border border-purple-200' };
+    if (points >= 1000) return { name: 'Sultan Sampah', color: 'bg-yellow-100 text-yellow-700 border border-yellow-200' };
+    if (points >= 500) return { name: 'Eco Warrior', color: 'bg-green-100 text-green-700 border border-green-200' };
+    if (points >= 200) return { name: 'Rajin Setor', color: 'bg-blue-100 text-blue-700 border border-blue-200' };
+    return { name: 'Pendatang Baru', color: 'bg-gray-100 text-gray-600 border border-gray-200' };
   };
+  // ------------------------------------------------------------
 
   const level = getLevel(stats.totalPoints);
 
-  // --- PERBAIKAN DI SINI ---
   const handleLogout = () => {
     if (window.confirm('Apakah Anda yakin ingin keluar?')) {
       toast.success('Berhasil keluar akun');
-      navigate('/'); // Menggunakan navigate, jadi error hilang
+      navigate('/');
     }
   };
 
@@ -58,7 +62,7 @@ export default function Profile() {
           <div className="bg-white rounded-2xl shadow-xl p-6 text-center border border-gray-100">
             <div className="relative inline-block">
               <img src={profile?.avatar_url || "https://ui-avatars.com/api/?name=User"} className="w-24 h-24 rounded-full border-4 border-white shadow-md mx-auto bg-gray-200 object-cover" />
-              <Link to="/profile/edit" className="absolute bottom-0 right-0 bg-blue-600 text-white p-1.5 rounded-full shadow-sm hover:bg-blue-700">
+              <Link to="/profile/edit" className="absolute bottom-0 right-0 bg-blue-600 text-white p-1.5 rounded-full shadow-sm hover:bg-blue-700 transition hover:scale-110">
                 <Edit2 size={14} />
               </Link>
             </div>
@@ -66,7 +70,8 @@ export default function Profile() {
             <h2 className="text-xl font-bold text-gray-800 mt-3">{profile?.full_name || "Nama User"}</h2>
             <p className="text-xs text-gray-400 mb-3">{profile?.nim} • {profile?.jurusan}</p>
             
-            <span className={`px-4 py-1.5 rounded-full text-xs font-bold ${level.color}`}>
+            {/* Badge Rank yang sudah dipercantik */}
+            <span className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm ${level.color}`}>
               Rank: {level.name}
             </span>
 
@@ -99,7 +104,7 @@ export default function Profile() {
           </Link>
           
           <Link to="/achievements" className="block">
-            <MenuButton icon={<Award size={18} />} title="Pencapaian" subtitle="Lihat lencana anda" />
+            <MenuButton icon={<Award size={18} />} title="Pencapaian" subtitle="Lihat lencana & rank" />
           </Link>
           
           <Link to="/about-app" className="block">
@@ -108,9 +113,9 @@ export default function Profile() {
           
           <button 
             onClick={handleLogout}
-            className="w-full bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:bg-red-50 transition group mt-4"
+            className="w-full bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:bg-red-50 transition group mt-4 cursor-pointer"
           >
-            <div className="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center group-hover:bg-red-100">
+            <div className="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center group-hover:bg-red-100 transition">
               <LogOut size={18} />
             </div>
             <div className="flex-1 text-left">
@@ -125,7 +130,7 @@ export default function Profile() {
 
 function MenuButton({ icon, title, subtitle }) {
   return (
-    <div className="w-full bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:bg-gray-50 transition group cursor-pointer">
+    <div className="w-full bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:bg-gray-50 transition group cursor-pointer hover:shadow-md">
       <div className="w-10 h-10 rounded-full bg-gray-50 text-gray-600 flex items-center justify-center group-hover:bg-green-50 group-hover:text-green-600 transition">
         {icon}
       </div>
@@ -133,7 +138,7 @@ function MenuButton({ icon, title, subtitle }) {
         <h4 className="text-sm font-bold text-gray-800">{title}</h4>
         <p className="text-[10px] text-gray-400">{subtitle}</p>
       </div>
-      <ChevronRight size={16} className="text-gray-300" />
+      <ChevronRight size={16} className="text-gray-300 group-hover:text-green-600 transition" />
     </div>
   );
 }

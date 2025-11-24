@@ -22,6 +22,23 @@ export default function Catalog() {
   };
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true); // Set loading nyala
+        
+        const data = await getCatalog();
+        setItems(data);
+
+        // KITA PAKSA TUNGGU 2 DETIK AGAR SKELETON TERLIHAT
+        setTimeout(() => {
+          setLoading(false); // Baru matikan loading setelah 2 detik
+        }, 2000);
+
+      } catch (error) {
+        console.error(error);
+        setLoading(false);
+      }
+    };
     fetchData();
   }, []);
 
@@ -55,7 +72,10 @@ export default function Catalog() {
 
         {loading ? (
           <div className="grid grid-cols-1 gap-4">
-            {[1, 2, 3, 4, 5].map((n) => <SkeletonCard key={n} />)}
+            {/* Tampilkan 5 Skeleton palsu saat loading */}
+            {[1, 2, 3, 4, 5].map((n) => (
+              <SkeletonCard key={n} />
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
