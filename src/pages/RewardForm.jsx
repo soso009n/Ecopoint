@@ -11,7 +11,7 @@ export default function RewardForm() {
   const [formData, setFormData] = useState({
     name: '',
     points_required: '',
-    category: 'Voucher', // Default
+    category: 'Voucher',
     description: '',
     image_url: ''
   });
@@ -20,7 +20,6 @@ export default function RewardForm() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Load data jika Edit Mode
   useEffect(() => {
     if (id) {
       getRewardById(id).then((data) => {
@@ -66,22 +65,29 @@ export default function RewardForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    // Background utama
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-300">
+      
+      {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => navigate(-1)} className="bg-white p-2 rounded-full shadow-sm"><ArrowLeft size={20}/></button>
-        <h1 className="text-xl font-bold text-gray-800">{id ? 'Edit Hadiah' : 'Tambah Hadiah'}</h1>
+        <button onClick={() => navigate(-1)} className="bg-white dark:bg-gray-800 dark:text-white p-2 rounded-full shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+            <ArrowLeft size={20}/>
+        </button>
+        <h1 className="text-xl font-bold text-gray-800 dark:text-white transition-colors">
+            {id ? 'Edit Hadiah' : 'Tambah Hadiah'}
+        </h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Upload Gambar */}
+        {/* Upload Gambar: Border & BG disesuaikan */}
         <div 
-          className="bg-white p-4 rounded-2xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer h-40"
+          className="bg-white dark:bg-gray-800 p-4 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center cursor-pointer h-40 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
           onClick={() => fileInputRef.current.click()}
         >
           {previewUrl ? (
             <img src={previewUrl} className="h-full object-contain" alt="Preview" />
           ) : (
-            <div className="text-center text-gray-400">
+            <div className="text-center text-gray-400 dark:text-gray-500">
               <Camera size={32} className="mx-auto mb-2" />
               <span className="text-xs">Upload Foto Hadiah</span>
             </div>
@@ -89,20 +95,38 @@ export default function RewardForm() {
           <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
         </div>
 
-        <div className="bg-white p-5 rounded-2xl shadow-sm space-y-4">
+        {/* Form Container */}
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm space-y-4 transition-colors">
           <div>
-            <label className="text-xs font-bold text-gray-500">Nama Hadiah</label>
-            <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-3 mt-1 bg-gray-50 rounded-xl" placeholder="Contoh: Voucher Pulsa 10rb" />
+            <label className="text-xs font-bold text-gray-500 dark:text-gray-400">Nama Hadiah</label>
+            <input 
+                required 
+                type="text" 
+                value={formData.name} 
+                onChange={e => setFormData({...formData, name: e.target.value})} 
+                className="w-full p-3 mt-1 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 transition-colors" 
+                placeholder="Contoh: Voucher Pulsa 10rb" 
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold text-gray-500">Harga Poin</label>
-              <input required type="number" value={formData.points_required} onChange={e => setFormData({...formData, points_required: e.target.value})} className="w-full p-3 mt-1 bg-gray-50 rounded-xl" />
+              <label className="text-xs font-bold text-gray-500 dark:text-gray-400">Harga Poin</label>
+              <input 
+                required 
+                type="number" 
+                value={formData.points_required} 
+                onChange={e => setFormData({...formData, points_required: e.target.value})} 
+                className="w-full p-3 mt-1 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 transition-colors" 
+              />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-500">Kategori</label>
-              <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full p-3 mt-1 bg-gray-50 rounded-xl">
+              <label className="text-xs font-bold text-gray-500 dark:text-gray-400">Kategori</label>
+              <select 
+                value={formData.category} 
+                onChange={e => setFormData({...formData, category: e.target.value})} 
+                className="w-full p-3 mt-1 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 transition-colors"
+              >
                 <option value="Voucher">Voucher</option>
                 <option value="E-Wallet">E-Wallet</option>
                 <option value="Pulsa">Pulsa</option>
@@ -112,12 +136,18 @@ export default function RewardForm() {
           </div>
 
           <div>
-            <label className="text-xs font-bold text-gray-500">Deskripsi</label>
-            <textarea rows="3" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full p-3 mt-1 bg-gray-50 rounded-xl" placeholder="Keterangan hadiah..."></textarea>
+            <label className="text-xs font-bold text-gray-500 dark:text-gray-400">Deskripsi</label>
+            <textarea 
+                rows="3" 
+                value={formData.description} 
+                onChange={e => setFormData({...formData, description: e.target.value})} 
+                className="w-full p-3 mt-1 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 transition-colors" 
+                placeholder="Keterangan hadiah..."
+            ></textarea>
           </div>
         </div>
 
-        <button type="submit" disabled={loading} className="w-full bg-orange-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-orange-700 transition flex justify-center items-center gap-2">
+        <button type="submit" disabled={loading} className="w-full bg-orange-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-orange-700 dark:hover:bg-orange-500 transition flex justify-center items-center gap-2">
           {loading ? <Loader2 className="animate-spin"/> : <><Save size={20}/> Simpan Hadiah</>}
         </button>
       </form>

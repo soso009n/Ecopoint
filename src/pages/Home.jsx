@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getTransactionSummary, getHistory } from '../services/transactionService'; 
-import { getProfile } from '../services/profileService'; // 1. Import Service Profile
+import { getProfile } from '../services/profileService';
 import { Wallet, ArrowUpRight, Leaf, History, ChevronRight, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import HomeChart from '../components/HomeChart';
@@ -9,22 +9,18 @@ import PageTransition from '../components/PageTransition';
 export default function Home() {
   const [stats, setStats] = useState({ totalPoints: 0 });
   const [chartData, setChartData] = useState([]);
-  const [profile, setProfile] = useState(null); // 2. State untuk Profile
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 3. Ambil Data Transaksi & Profile sekaligus
         const summary = await getTransactionSummary();
         setStats(summary);
-        
         const history = await getHistory();
         processChartData(history);
-
         const profileData = await getProfile();
         setProfile(profileData);
-
       } catch (error) {
         console.error("Gagal ambil data:", error);
       } finally {
@@ -51,19 +47,17 @@ export default function Home() {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gray-50 p-6 pb-24">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 pb-24 transition-colors duration-300">
         {/* Header User */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            {/* Bonus: Nama User juga jadi dinamis */}
-            <h1 className="text-xl font-bold text-gray-800">
+            <h1 className="text-xl font-bold text-gray-800 dark:text-white transition-colors">
               Halo, {profile?.full_name ? profile.full_name.split(' ')[0] : 'EcoWarrior'} 👋
             </h1>
-            <p className="text-xs text-gray-500">Ayo selamatkan bumi hari ini!</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Ayo selamatkan bumi hari ini!</p>
           </div>
           
-          <Link to="/profile" className="w-10 h-10 bg-green-100 rounded-full overflow-hidden border-2 border-white shadow-sm">
-            {/* 4. Gambar sekarang mengambil dari profile.avatar_url */}
+          <Link to="/profile" className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-full overflow-hidden border-2 border-white dark:border-gray-700 shadow-sm">
             <img 
               src={profile?.avatar_url || "https://ui-avatars.com/api/?name=User&background=16a34a&color=fff"} 
               alt="Profile" 
@@ -73,7 +67,7 @@ export default function Home() {
         </div>
 
         {/* Card Saldo */}
-        <div className="bg-gradient-to-br from-green-600 to-emerald-500 rounded-2xl p-6 text-white shadow-lg shadow-green-200 mb-8 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-green-600 to-emerald-500 dark:from-green-700 dark:to-emerald-800 rounded-2xl p-6 text-white shadow-lg shadow-green-200 dark:shadow-none mb-8 relative overflow-hidden transition-colors">
           <div className="absolute top-0 right-0 opacity-10 transform translate-x-4 -translate-y-4">
             <Leaf size={120} />
           </div>
@@ -92,7 +86,7 @@ export default function Home() {
               <Link to="/rewards" className="flex-1 bg-white/20 backdrop-blur-md py-2.5 rounded-xl text-xs font-semibold flex justify-center items-center gap-2 hover:bg-white/30 transition active:scale-95">
                 <Wallet size={16} /> Tukar Poin
               </Link>
-              <Link to="/catalog" className="flex-1 bg-white text-green-700 py-2.5 rounded-xl text-xs font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-gray-100 transition active:scale-95">
+              <Link to="/catalog" className="flex-1 bg-white text-green-700 dark:text-green-800 py-2.5 rounded-xl text-xs font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-gray-100 transition active:scale-95">
                 <ArrowUpRight size={16} /> Setor Sampah
               </Link>
             </div>
@@ -103,31 +97,31 @@ export default function Home() {
         <HomeChart data={chartData} />
 
         {/* Menu Pintas */}
-        <h3 className="font-bold text-gray-800 mb-4 text-sm">Akses Cepat</h3>
+        <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-4 text-sm transition-colors">Akses Cepat</h3>
         <div className="grid grid-cols-2 gap-4">
-          <Link to="/catalog" className="bg-white p-4 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 hover:border-green-200 transition group">
-            <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition">
+          <Link to="/catalog" className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 dark:border-gray-700 hover:border-green-200 dark:hover:border-green-600 transition group">
+            <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition">
               <Leaf size={20} />
             </div>
             <div className="flex justify-between items-end">
               <div>
-                <h4 className="font-bold text-gray-800 text-sm">Katalog</h4>
+                <h4 className="font-bold text-gray-800 dark:text-white text-sm transition-colors">Katalog</h4>
                 <p className="text-[10px] text-gray-400">Cek harga sampah</p>
               </div>
-              <ChevronRight size={16} className="text-gray-300" />
+              <ChevronRight size={16} className="text-gray-300 dark:text-gray-600" />
             </div>
           </Link>
 
-          <Link to="/history" className="bg-white p-4 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 hover:border-orange-200 transition group">
-            <div className="w-10 h-10 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition">
+          <Link to="/history" className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 dark:border-gray-700 hover:border-orange-200 dark:hover:border-orange-600 transition group">
+            <div className="w-10 h-10 bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition">
               <History size={20} />
             </div>
             <div className="flex justify-between items-end">
               <div>
-                <h4 className="font-bold text-gray-800 text-sm">Riwayat</h4>
+                <h4 className="font-bold text-gray-800 dark:text-white text-sm transition-colors">Riwayat</h4>
                 <p className="text-[10px] text-gray-400">Lihat transaksimu</p>
               </div>
-              <ChevronRight size={16} className="text-gray-300" />
+              <ChevronRight size={16} className="text-gray-300 dark:text-gray-600" />
             </div>
           </Link>
         </div>

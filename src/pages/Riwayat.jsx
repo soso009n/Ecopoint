@@ -3,7 +3,7 @@ import { getHistory, deleteTransaction } from '../services/transactionService';
 import { Calendar, ArrowUpRight, Loader2, Trash2, Printer, Clock } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import PageTransition from '../components/PageTransition'; // Import Animasi
+import PageTransition from '../components/PageTransition';
 
 export default function Riwayat() {
   const [transactions, setTransactions] = useState([]);
@@ -86,38 +86,50 @@ export default function Riwayat() {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gray-50 p-6 pb-24">
+      {/* Container: Background Dark Mode */}
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 pb-24 transition-colors duration-300">
+        
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Riwayat</h1>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white transition-colors">Riwayat</h1>
+          
+          {/* Tombol Print (Dark Mode Ready) */}
           {transactions.length > 0 && (
-            <button onClick={handlePrint} className="bg-white p-2.5 rounded-full shadow-sm border border-gray-200 text-gray-600 hover:text-green-600 hover:border-green-200 transition-all active:scale-95">
+            <button 
+              onClick={handlePrint} 
+              className="bg-white dark:bg-gray-800 p-2.5 rounded-full shadow-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:border-green-200 transition-all active:scale-95"
+            >
               <Printer size={20} />
             </button>
           )}
         </div>
 
         {loading ? (
-          <div className="text-center mt-10 text-gray-400 flex flex-col items-center">
+          <div className="text-center mt-10 text-gray-400 dark:text-gray-500 flex flex-col items-center">
             <Loader2 className="animate-spin mb-2" /> Memuat riwayat...
           </div>
         ) : transactions.length === 0 ? (
-          <div className="text-center mt-20 text-gray-400">
+          <div className="text-center mt-20 text-gray-400 dark:text-gray-500">
             <p>Belum ada transaksi.</p>
             <p className="text-xs mt-2">Ayo setor sampah pertamamu!</p>
           </div>
         ) : (
           <div className="space-y-4">
             {transactions.map((item) => (
-              <div key={item.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center hover:shadow-md transition group">
+              <div 
+                key={item.id} 
+                className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex justify-between items-center hover:shadow-md transition group"
+              >
                 <div className="flex gap-4 items-center">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    item.total_points > 0 ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'
+                    item.total_points > 0 
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' 
+                      : 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400'
                   }`}>
                     <ArrowUpRight size={20} className={item.total_points < 0 ? "rotate-180" : ""} />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-800 text-sm">
-                      {item.waste_name} <span className="font-normal text-gray-500">({item.weight_kg} kg)</span>
+                    <h3 className="font-bold text-gray-800 dark:text-white text-sm transition-colors">
+                      {item.waste_name} <span className="font-normal text-gray-500 dark:text-gray-400">({item.weight_kg} kg)</span>
                     </h3>
                     <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
                       <Clock size={12} /> {formatDateTime(item.date)}
@@ -126,10 +138,18 @@ export default function Riwayat() {
                 </div>
                 
                 <div className="text-right flex flex-col items-end gap-2">
-                  <span className={`font-bold ${item.total_points > 0 ? 'text-green-600' : 'text-orange-600'}`}>
+                  <span className={`font-bold ${
+                    item.total_points > 0 
+                      ? 'text-green-600 dark:text-green-400' 
+                      : 'text-orange-600 dark:text-orange-400'
+                  }`}>
                     {item.total_points > 0 ? '+' : ''}{item.total_points} Poin
                   </span>
-                  <button onClick={() => handleDelete(item.id, item.waste_name)} className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition">
+                  
+                  <button 
+                    onClick={() => handleDelete(item.id, item.waste_name)} 
+                    className="text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-1.5 rounded-md transition"
+                  >
                     <Trash2 size={16} />
                   </button>
                 </div>

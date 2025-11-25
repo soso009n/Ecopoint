@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getTransactionSummary } from '../services/transactionService';
-import { ArrowLeft, Award, Lock } from 'lucide-react';
+import { ArrowLeft, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
 
@@ -19,35 +19,65 @@ export default function Achievements() {
   ];
 
   useEffect(() => {
-    getTransactionSummary().then(data => setPoints(data.totalPoints));
+    // Pastikan service menangani error/empty state jika perlu
+    getTransactionSummary().then(data => setPoints(data?.totalPoints || 0));
   }, []);
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gray-50 p-6">
+      {/* Main Container Dark Mode */}
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 pb-24 transition-colors duration-300">
+        
+        {/* Header Section */}
         <div className="flex items-center gap-4 mb-8">
-          <button onClick={() => navigate(-1)} className="bg-white p-2 rounded-full shadow-sm"><ArrowLeft size={20}/></button>
-          <h1 className="text-xl font-bold text-gray-800">Pencapaian Saya</h1>
+          <button 
+            onClick={() => navigate(-1)} 
+            className="bg-white dark:bg-gray-800 dark:text-gray-200 p-2 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+          >
+            <ArrowLeft size={20}/>
+          </button>
+          <h1 className="text-xl font-bold text-gray-800 dark:text-white transition-colors">Pencapaian Saya</h1>
         </div>
 
-        <div className="bg-green-600 text-white p-6 rounded-2xl shadow-lg mb-6 text-center">
+        {/* Current Points Card */}
+        <div className="bg-green-600 dark:bg-green-700 text-white p-6 rounded-2xl shadow-lg shadow-green-900/20 mb-6 text-center transition-colors duration-300">
           <p className="text-sm opacity-90 mb-1">Poin Saat Ini</p>
           <h2 className="text-4xl font-bold">{points}</h2>
         </div>
 
+        {/* Badges Grid */}
         <div className="grid grid-cols-2 gap-4">
           {badges.map((badge) => {
             const isUnlocked = points >= badge.min;
+            
             return (
-              <div key={badge.id} className={`p-4 rounded-xl border ${isUnlocked ? 'bg-white border-green-200 shadow-sm' : 'bg-gray-100 border-gray-200 opacity-70'}`}>
+              <div 
+                key={badge.id} 
+                className={`p-4 rounded-xl border transition-all duration-300 ${
+                  isUnlocked 
+                    ? 'bg-white dark:bg-gray-800 border-green-200 dark:border-green-800 shadow-sm' // Style Terbuka
+                    : 'bg-gray-100 dark:bg-gray-800/40 border-gray-200 dark:border-gray-800 opacity-70 grayscale' // Style Terkunci
+                }`}
+              >
                 <div className="flex justify-between items-start mb-2">
-                  <span className="text-3xl">{badge.icon}</span>
-                  {!isUnlocked && <Lock size={16} className="text-gray-400"/>}
+                  <span className="text-3xl filter drop-shadow-sm">{badge.icon}</span>
+                  {!isUnlocked && <Lock size={16} className="text-gray-400 dark:text-gray-600"/>}
                 </div>
-                <h3 className={`font-bold text-sm ${isUnlocked ? 'text-gray-800' : 'text-gray-500'}`}>{badge.name}</h3>
-                <p className="text-[10px] text-gray-400 mt-1">{badge.desc}</p>
-                <div className="mt-3 text-[10px] font-semibold text-green-600">
-                  {isUnlocked ? 'TERBUKA' : `Butuh ${badge.min} Poin`}
+                
+                <h3 className={`font-bold text-sm mb-1 transition-colors ${
+                  isUnlocked ? 'text-gray-800 dark:text-gray-100' : 'text-gray-500 dark:text-gray-500'
+                }`}>
+                  {badge.name}
+                </h3>
+                
+                <p className="text-[10px] text-gray-400 dark:text-gray-400 leading-tight">
+                  {badge.desc}
+                </p>
+                
+                <div className={`mt-3 text-[10px] font-bold tracking-wide uppercase ${
+                    isUnlocked ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-600'
+                }`}>
+                  {isUnlocked ? 'Terbuka' : `Butuh ${badge.min} Poin`}
                 </div>
               </div>
             );

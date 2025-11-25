@@ -1,92 +1,86 @@
+// App.js
 import { useLocation, Routes, Route } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
 
-// Komponen Navigasi
+// Components
 import BottomNav from './components/BottomNav';
+import Sidebar from './components/Sidebar';
 
-// Halaman Utama
+// Pages
 import Home from './pages/Home';
 import Catalog from './pages/Catalog';
 import Riwayat from './pages/Riwayat';
 import Profile from './pages/Profile';
-
-// Halaman Detail & Form
 import CatalogDetail from './pages/CatalogDetail';
 import CatalogForm from './pages/CatalogForm';
 import Rewards from './pages/Rewards';
 import RewardDetail from './pages/RewardDetail';
 import RewardForm from './pages/RewardForm';
 import EditProfile from './pages/EditProfile';
-
-// Halaman Tambahan
 import Achievements from './pages/Achievements';
 import AboutApp from './pages/AboutApp';
 
 function App() {
   const location = useLocation();
 
-  // Daftar path di mana BottomNav HARUS disembunyikan
+  // Daftar path di mana Bottom Nav (Mobile) harus DISEMBUYIKAN
   const hideNavbarPaths = [
-    '/catalog/new',
-    '/catalog/edit', // Mencakup /catalog/edit/:id
-    '/catalog/',     // Mencakup /catalog/:id (Detail)
-    '/rewards/new',
-    '/rewards/edit',
-    '/rewards/',     // Mencakup /rewards/:id (Detail)
-    '/profile/edit',
-    '/achievements',
-    '/about-app'
+    '/catalog/new', '/catalog/edit', 
+    '/rewards/new', '/rewards/edit', 
+    '/profile/edit', '/achievements', '/about-app'
   ];
 
-  // Cek apakah path saat ini ada di daftar hideNavbarPaths
-  // Kita pakai logic: Tampilkan Navbar KECUALI path saat ini cocok dengan salah satu rules di atas
-  // Pengecualian: '/catalog' dan '/rewards' (halaman list utama) harus TETAP MENAMPILKAN navbar.
-  const shouldShowNavbar = !hideNavbarPaths.some(path => {
-    // Logika khusus: Jangan sembunyikan jika path-nya persis '/catalog' atau '/rewards'
-    if (location.pathname === '/catalog' || location.pathname === '/rewards') return false;
-    
-    // Sembunyikan jika path dimulai dengan daftar di atas (misal /catalog/123)
-    return location.pathname.startsWith(path);
-  });
+  // Logic: Tampilkan nav jika path saat ini TIDAK ada di daftar hideNavbarPaths
+  // (Kecuali jika path induknya 'catalog' atau 'rewards', kita harus cek lebih detail)
+  const shouldShowBottomNav = !hideNavbarPaths.some(path => location.pathname.startsWith(path));
 
   return (
-    <div className="max-w-md mx-auto bg-white min-h-screen shadow-2xl overflow-hidden relative">
+    // Wrapper Utama: Full Screen, Flex Column (Mobile), Row (Desktop), Support Dark Mode
+    <div className="min-h-screen w-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 flex flex-col md:flex-row transition-colors duration-300">
       
-      {/* Notifikasi Toast Global */}
       <Toaster position="top-center" reverseOrder={false} />
 
-      {/* Area Konten Halaman dengan Animasi */}
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
+      {/* --- SIDEBAR (Desktop Only) --- */}
+      {/* Sidebar komponen sudah menghandle hidden/flex, jadi tinggal panggil */}
+      <Sidebar />
+
+      {/* --- AREA KONTEN UTAMA --- */}
+      {/* md:ml-64: Memberi margin kiri selebar sidebar (16rem/256px) hanya di desktop */}
+      <main className="flex-1 md:ml-64 min-h-screen relative w-full overflow-x-hidden">
+        
+        {/* Container Global (Opsional: Membatasi lebar konten agar nyaman dibaca di layar ultra-wide) */}
+        <div className="w-full max-w-7xl mx-auto"> 
           
-          {/* === HALAMAN UTAMA === */}
-          <Route path="/" element={<Home />} />
-          <Route path="/catalog" element={<Catalog />} />
-          <Route path="/rewards" element={<Rewards />} />
-          <Route path="/history" element={<Riwayat />} />
-          <Route path="/profile" element={<Profile />} />
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              <Route path="/" element={<Home />} />
+              <Route path="/catalog" element={<Catalog />} />
+              <Route path="/rewards" element={<Rewards />} />
+              <Route path="/history" element={<Riwayat />} />
+              <Route path="/profile" element={<Profile />} />
 
-          {/* === KATALOG: Form & Detail === */}
-          <Route path="/catalog/new" element={<CatalogForm />} />
-          <Route path="/catalog/edit/:id" element={<CatalogForm />} />
-          <Route path="/catalog/:id" element={<CatalogDetail />} />
+              <Route path="/catalog/new" element={<CatalogForm />} />
+              <Route path="/catalog/edit/:id" element={<CatalogForm />} />
+              <Route path="/catalog/:id" element={<CatalogDetail />} />
 
-          {/* === REWARDS: Form & Detail === */}
-          <Route path="/rewards/new" element={<RewardForm />} />
-          <Route path="/rewards/edit/:id" element={<RewardForm />} />
-          <Route path="/rewards/:id" element={<RewardDetail />} />
+              <Route path="/rewards/new" element={<RewardForm />} />
+              <Route path="/rewards/edit/:id" element={<RewardForm />} />
+              <Route path="/rewards/:id" element={<RewardDetail />} />
 
-          {/* === PROFIL: Edit & Sub-menu === */}
-          <Route path="/profile/edit" element={<EditProfile />} />
-          <Route path="/achievements" element={<Achievements />} />
-          <Route path="/about-app" element={<AboutApp />} />
+              <Route path="/profile/edit" element={<EditProfile />} />
+              <Route path="/achievements" element={<Achievements />} />
+              <Route path="/about-app" element={<AboutApp />} />
+            </Routes>
+          </AnimatePresence>
 
-        </Routes>
-      </AnimatePresence>
+          {/* Spacer untuk Mobile agar konten terbawah tidak tertutup BottomNav */}
+          {shouldShowBottomNav && <div className="h-24 md:hidden" />}
+        </div>
+      </main>
 
-      {/* Navigasi Bawah (Hanya muncul di halaman tertentu) */}
-      {shouldShowNavbar && <BottomNav />}
+      {/* --- BOTTOM NAV (Mobile Only) --- */}
+      {shouldShowBottomNav && <BottomNav />}
 
     </div>
   );
