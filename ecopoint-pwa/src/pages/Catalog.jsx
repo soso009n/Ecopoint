@@ -32,7 +32,7 @@ export default function Catalog() {
         // KITA PAKSA TUNGGU 2 DETIK AGAR SKELETON TERLIHAT
         setTimeout(() => {
           setLoading(false); // Baru matikan loading setelah 2 detik
-        }, 2000);
+        }, 1000);
 
       } catch (error) {
         console.error(error);
