@@ -1,4 +1,54 @@
 @import "tailwindcss";
 
-/* PAKSA DARK MODE MENGGUNAKAN CLASS .dark */
+/* --- KONFIGURASI DARK MODE --- */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* --- BASE STYLES (PROFESIONAL LOOK) --- */
+@layer base {
+  html {
+    /* Scroll smooth untuk navigasi anchor */
+    scroll-behavior: smooth; 
+  }
+
+  body {
+    /* Font smoothing agar teks terlihat tajam & jelas di semua layar */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    
+    /* Mencegah flash warna putih saat reload di dark mode */
+    @apply bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100;
+  }
+}
+
+/* --- UTILITIES --- */
+@layer utilities {
+  
+  /* Fix untuk Sidebar: 
+     Kelas ini dipanggil di Sidebar.jsx tetapi belum ada definisinya sebelumnya.
+     Ini membuat scrollbar sidebar menjadi tipis dan elegan di Desktop (Windows/Linux).
+  */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 5px; /* Lebar scrollbar tipis */
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent; /* Track transparan agar bersih */
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-gray-700 rounded-full; /* Warna thumb menyesuaikan tema */
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-gray-600; /* Warna saat di-hover */
+  }
+
+  /* Utility tambahan untuk menyembunyikan scrollbar tapi tetap bisa discroll (opsional) */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
