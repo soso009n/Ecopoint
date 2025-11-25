@@ -1,3 +1,4 @@
+// src/pages/Home.jsx
 import { useEffect, useState } from 'react';
 import { getTransactionSummary, getHistory } from '../services/transactionService'; 
 import { getProfile } from '../services/profileService';
@@ -48,6 +49,7 @@ export default function Home() {
   return (
     <PageTransition>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 pb-24 transition-colors duration-300">
+        
         {/* Header User */}
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -96,10 +98,16 @@ export default function Home() {
         {/* Grafik */}
         <HomeChart data={chartData} />
 
-        {/* Menu Pintas */}
-        <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-4 text-sm transition-colors">Akses Cepat</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <Link to="/catalog" className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 dark:border-gray-700 hover:border-green-200 dark:hover:border-green-600 transition group">
+        {/* Menu Pintas - DIPERBARUI */}
+        <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-4 text-sm md:text-base transition-colors">
+            Akses Cepat
+        </h3>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Link 
+            to="/catalog" 
+            className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 dark:border-gray-700 hover:border-green-200 dark:hover:border-green-600 hover:shadow-md transition group cursor-pointer"
+          >
             <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition">
               <Leaf size={20} />
             </div>
@@ -112,7 +120,10 @@ export default function Home() {
             </div>
           </Link>
 
-          <Link to="/history" className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 dark:border-gray-700 hover:border-orange-200 dark:hover:border-orange-600 transition group">
+          <Link 
+            to="/history" 
+            className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 dark:border-gray-700 hover:border-orange-200 dark:hover:border-orange-600 hover:shadow-md transition group cursor-pointer"
+          >
             <div className="w-10 h-10 bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition">
               <History size={20} />
             </div>
@@ -124,7 +135,10 @@ export default function Home() {
               <ChevronRight size={16} className="text-gray-300 dark:text-gray-600" />
             </div>
           </Link>
+          
+          {/* Slot untuk menu tambahan di masa mendatang (Achievement, Profile, dll) akan mengisi grid ke-3 dan ke-4 di mode desktop */}
         </div>
+
       </div>
     </PageTransition>
   );

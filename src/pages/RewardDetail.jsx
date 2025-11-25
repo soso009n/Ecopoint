@@ -1,9 +1,11 @@
+// src/pages/RewardDetail.jsx
+
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getRewardById, redeemReward } from '../services/rewardService';
 import { getTransactionSummary } from '../services/transactionService'; 
-import { ArrowLeft, Loader2, Coins } from 'lucide-react'; // Tambah icon Coins
-import toast from 'react-hot-toast'; // Ganti alert dengan toast
+import { ArrowLeft, Loader2, Coins, Tag } from 'lucide-react'; 
+import toast from 'react-hot-toast';
 import PageTransition from '../components/PageTransition';
 
 export default function RewardDetail() {
@@ -41,7 +43,6 @@ export default function RewardDetail() {
       return toast.error("Poin Anda tidak mencukupi!");
     }
     
-    // Konfirmasi via Toast/Browser logic (bisa dipercantik dengan Modal, tapi confirm cukup untuk sekarang)
     if (window.confirm(`Tukar ${item.points_required} poin untuk ${item.name}?`)) {
       setProcessing(true);
       const loadingToast = toast.loading("Memproses penukaran...");
@@ -78,88 +79,126 @@ export default function RewardDetail() {
 
   return (
     <PageTransition>
-      {/* Container Utama: Padding bottom besar agar konten tidak tertutup tombol sticky */}
-      <div className="min-h-screen bg-white dark:bg-gray-900 pb-32 relative transition-colors duration-300">
+      <div className="min-h-screen bg-white dark:bg-gray-900 pb-32 md:pb-10 relative transition-colors duration-300">
         
-        {/* Tombol Back */}
-        <button 
-          onClick={() => navigate(-1)} 
-          className="absolute top-4 left-4 z-20 bg-white/80 dark:bg-gray-800/80 dark:text-white p-2 rounded-full shadow-sm backdrop-blur transition hover:bg-white dark:hover:bg-gray-700"
-        >
-          <ArrowLeft size={24} className="text-gray-700 dark:text-gray-200" />
-        </button>
+        {/* Header Navigation */}
+        <div className="p-4 md:pt-8">
+            <button 
+              onClick={() => navigate(-1)} 
+              className="bg-gray-100 dark:bg-gray-800 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition shadow-sm"
+            >
+              <ArrowLeft size={24} className="text-gray-700 dark:text-gray-200" />
+            </button>
+        </div>
         
-        {/* Gambar Header */}
-        <div className="h-72 w-full bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center p-10 transition-colors relative">
-          <img 
-            src={item.image_url} 
-            className="w-48 h-48 object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500" 
-            alt={item.name}
-            onError={(e) => { e.target.src = 'https://placehold.co/400x400?text=No+Image'; }} 
-          />
-          {/* Radial Gradient overlay untuk estetika */}
-          <div className="absolute inset-0 bg-gradient-to-t from-white/20 dark:from-gray-900/40 to-transparent pointer-events-none"></div>
-        </div>
-
-        <div className="px-6 py-6">
-          {/* Kategori Badge */}
-          <span className="bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 px-3 py-1 rounded-full text-xs font-bold transition-colors uppercase tracking-wider">
-            {item.category}
-          </span>
-
-          {/* Judul & Deskripsi */}
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mt-4 transition-colors leading-tight">{item.name}</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-3 text-sm leading-relaxed transition-colors whitespace-pre-line">
-            {item.description}
-          </p>
-          
-          {/* Info Saldo User */}
-          <div className="mt-8 bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-full text-yellow-600 dark:text-yellow-500">
-                    <Coins size={20} />
-                </div>
-                <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Saldo Poin Anda</p>
-                    <p className="font-bold text-gray-800 dark:text-white">{currentPoints} Poin</p>
-                </div>
-            </div>
-            {/* Status Cukup/Kurang */}
-            <span className={`text-xs font-bold px-2 py-1 rounded-md ${isAffordable ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
-                {isAffordable ? 'Cukup' : 'Kurang'}
-            </span>
-          </div>
-        </div>
-
-        {/* --- FIXED BOTTOM BAR (PERBAIKAN LAYOUT) --- */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 p-4 z-[999] shadow-[0_-5px_20px_rgba(0,0,0,0.05)] dark:shadow-none transition-colors">
-          <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+        {/* --- LAYOUT GRID: Mobile (Stack) vs Desktop (2 Kolom) --- */}
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 px-6">
             
-            {/* Info Harga di Kiri */}
+            {/* KOLOM KIRI: GAMBAR */}
+            <div className="h-72 md:h-[500px] w-full bg-orange-50 dark:bg-orange-900/20 rounded-3xl flex items-center justify-center p-10 relative overflow-hidden shadow-sm group">
+                <img 
+                    src={item.image_url} 
+                    className="w-48 h-48 md:w-80 md:h-80 object-contain drop-shadow-2xl transition-transform duration-500 group-hover:scale-110" 
+                    alt={item.name}
+                    onError={(e) => { e.target.src = 'https://placehold.co/400x400?text=No+Image'; }} 
+                />
+                {/* Decorative Background Effect */}
+                <div className="absolute inset-0 bg-gradient-to-t from-white/40 dark:from-gray-900/40 to-transparent pointer-events-none"></div>
+            </div>
+
+            {/* KOLOM KANAN: DETAIL INFO */}
+            <div className="flex flex-col justify-center">
+                {/* Kategori & Harga */}
+                <div className="flex items-center gap-3 mb-4">
+                    <span className="bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                        <Tag size={12} /> {item.category}
+                    </span>
+                </div>
+
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 leading-tight">
+                    {item.name}
+                </h1>
+
+                <p className="text-2xl font-bold text-orange-600 dark:text-orange-500 mb-6">
+                    {item.points_required} <span className="text-base text-gray-400 font-medium">Poin</span>
+                </p>
+
+                {/* Deskripsi Card */}
+                <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 mb-6">
+                    <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 text-lg">Detail Hadiah</h3>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed whitespace-pre-line">
+                        {item.description || "Tidak ada keterangan tambahan untuk hadiah ini."}
+                    </p>
+                </div>
+                
+                {/* Info Saldo User & Status */}
+                <div className="bg-blue-50 dark:bg-blue-900/10 p-5 rounded-2xl border border-blue-100 dark:border-blue-800/50 flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-white dark:bg-blue-800/30 rounded-full text-blue-600 dark:text-blue-400 shadow-sm">
+                            <Coins size={24} />
+                        </div>
+                        <div>
+                            <p className="text-xs text-blue-600 dark:text-blue-300 font-medium">Saldo Anda</p>
+                            <p className="font-bold text-lg text-gray-800 dark:text-white">{currentPoints} Poin</p>
+                        </div>
+                    </div>
+                    {/* Badge Status Kecukupan */}
+                    <div className={`text-xs font-bold px-3 py-1.5 rounded-lg border ${
+                        isAffordable 
+                        ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' 
+                        : 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
+                    }`}>
+                        {isAffordable ? 'Cukup' : 'Kurang'}
+                    </div>
+                </div>
+
+                {/* Tombol Aksi (Versi Desktop - Muncul di dalam flow konten) */}
+                <button 
+                    onClick={handleRedeem}
+                    disabled={processing || !isAffordable}
+                    className={`
+                        hidden md:flex w-full py-4 rounded-xl font-bold transition-all justify-center items-center gap-2 shadow-lg hover:-translate-y-1
+                        ${(!isAffordable)
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none dark:bg-gray-800 dark:text-gray-600' 
+                            : 'bg-orange-600 text-white hover:bg-orange-700 shadow-orange-600/30'
+                        }
+                    `}
+                >
+                    {processing ? <Loader2 className="animate-spin" /> : (isAffordable ? "Tukar Sekarang" : "Poin Tidak Cukup")}
+                </button>
+            </div>
+        </div>
+
+        {/* --- FIXED BOTTOM BAR (MOBILE ONLY) --- */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 p-4 z-[999] shadow-[0_-5px_20px_rgba(0,0,0,0.05)] dark:shadow-none transition-colors">
+          <div className="flex items-center justify-between gap-4">
+            
+            {/* Info Harga Singkat */}
             <div className="flex flex-col">
-               <p className="text-[10px] uppercase text-gray-500 font-bold tracking-wider">Harga Reward</p>
+               <p className="text-[10px] uppercase text-gray-500 font-bold tracking-wider">Harga</p>
                <p className="text-xl font-bold text-orange-600 dark:text-orange-500 leading-none">
                  {item.points_required} <span className="text-sm text-gray-400 font-medium">Pts</span>
                </p>
             </div>
 
-            {/* Tombol Aksi */}
+            {/* Tombol Aksi Mobile */}
             <button 
               onClick={handleRedeem}
               disabled={processing || !isAffordable}
               className={`
-                 flex-1 md:flex-none md:w-64 py-3.5 px-6 rounded-xl font-bold transition-all flex justify-center items-center gap-2 shadow-lg
+                 flex-1 py-3.5 px-6 rounded-xl font-bold transition-all flex justify-center items-center gap-2 shadow-md
                  ${(!isAffordable)
                     ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none dark:bg-gray-800 dark:text-gray-600' 
-                    : 'bg-orange-600 text-white hover:bg-orange-700 active:scale-95 shadow-orange-600/30'
+                    : 'bg-orange-600 text-white hover:bg-orange-700 active:scale-95'
                  }
               `}
             >
-              {processing ? <Loader2 className="animate-spin" /> : (isAffordable ? "Tukar Sekarang" : "Poin Kurang")}
+              {processing ? <Loader2 className="animate-spin" /> : "Tukar Sekarang"}
             </button>
             
           </div>
         </div>
+
       </div>
     </PageTransition>
   );

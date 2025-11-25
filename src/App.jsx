@@ -1,4 +1,6 @@
-// App.js
+// src/App.jsx
+// (Referensi file asli)
+
 import { useLocation, Routes, Route } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
@@ -7,7 +9,7 @@ import { Toaster } from 'react-hot-toast';
 import BottomNav from './components/BottomNav';
 import Sidebar from './components/Sidebar';
 
-// Pages
+// Pages (Import tetap sama...)
 import Home from './pages/Home';
 import Catalog from './pages/Catalog';
 import Riwayat from './pages/Riwayat';
@@ -24,36 +26,34 @@ import AboutApp from './pages/AboutApp';
 function App() {
   const location = useLocation();
 
-  // Daftar path di mana Bottom Nav (Mobile) harus DISEMBUYIKAN
   const hideNavbarPaths = [
     '/catalog/new', '/catalog/edit', 
     '/rewards/new', '/rewards/edit', 
     '/profile/edit', '/achievements', '/about-app'
   ];
 
-  // Logic: Tampilkan nav jika path saat ini TIDAK ada di daftar hideNavbarPaths
-  // (Kecuali jika path induknya 'catalog' atau 'rewards', kita harus cek lebih detail)
-  const shouldShowBottomNav = !hideNavbarPaths.some(path => location.pathname.startsWith(path));
+  // Sembunyikan BottomNav jika path detail (agar tidak menumpuk dengan tombol aksi)
+  // Tambahan logic: Sembunyikan juga jika path mengandung '/catalog/' dan ada ID (detail page)
+  const isDetailPage = location.pathname.includes('/catalog/') && location.pathname.split('/').length > 2;
+  
+  const shouldShowBottomNav = !hideNavbarPaths.some(path => location.pathname.startsWith(path)) && !isDetailPage;
 
   return (
-    // Wrapper Utama: Full Screen, Flex Column (Mobile), Row (Desktop), Support Dark Mode
-    <div className="min-h-screen w-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 flex flex-col md:flex-row transition-colors duration-300">
+    <div className="min-h-screen w-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 flex flex-col md:flex-row transition-colors duration-300 font-sans">
       
       <Toaster position="top-center" reverseOrder={false} />
 
-      {/* --- SIDEBAR (Desktop Only) --- */}
-      {/* Sidebar komponen sudah menghandle hidden/flex, jadi tinggal panggil */}
+      {/* Sidebar Desktop */}
       <Sidebar />
 
-      {/* --- AREA KONTEN UTAMA --- */}
-      {/* md:ml-64: Memberi margin kiri selebar sidebar (16rem/256px) hanya di desktop */}
+      {/* Main Content Area */}
+      {/* Perbaikan: Tambahkan 'max-w-screen-2xl' agar tidak terlalu lebar di layar besar */}
       <main className="flex-1 md:ml-64 min-h-screen relative w-full overflow-x-hidden">
-        
-        {/* Container Global (Opsional: Membatasi lebar konten agar nyaman dibaca di layar ultra-wide) */}
-        <div className="w-full max-w-7xl mx-auto"> 
+        <div className="w-full max-w-5xl mx-auto md:px-8"> 
           
           <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>
+               {/* Route definitions tetap sama */}
               <Route path="/" element={<Home />} />
               <Route path="/catalog" element={<Catalog />} />
               <Route path="/rewards" element={<Rewards />} />
@@ -74,12 +74,12 @@ function App() {
             </Routes>
           </AnimatePresence>
 
-          {/* Spacer untuk Mobile agar konten terbawah tidak tertutup BottomNav */}
+          {/* Spacer Mobile */}
           {shouldShowBottomNav && <div className="h-24 md:hidden" />}
         </div>
       </main>
 
-      {/* --- BOTTOM NAV (Mobile Only) --- */}
+      {/* Bottom Nav Mobile */}
       {shouldShowBottomNav && <BottomNav />}
 
     </div>
