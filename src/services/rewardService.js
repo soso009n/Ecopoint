@@ -1,6 +1,10 @@
 import { supabase } from '../config/supabaseClient';
 
-// 1. READ (Ambil Semua)
+// ---------------------------------------------------------
+// 1. READ (Ambil Data Hadiah)
+// ---------------------------------------------------------
+
+// Ambil Semua Hadiah untuk Katalog
 export const getRewards = async () => {
   const { data, error } = await supabase
     .from('rewards_catalog')
@@ -14,7 +18,7 @@ export const getRewards = async () => {
   return data || [];
 };
 
-// 2. READ (Ambil Satu)
+// Ambil Satu Hadiah berdasarkan ID
 export const getRewardById = async (id) => {
   if (!id) throw new Error("ID Hadiah diperlukan");
 
@@ -28,7 +32,11 @@ export const getRewardById = async (id) => {
   return data;
 };
 
-// 3. UPLOAD IMAGE
+// ---------------------------------------------------------
+// 2. WRITE (Kelola Hadiah - Admin)
+// ---------------------------------------------------------
+
+// Upload Gambar Hadiah ke Storage
 export const uploadRewardImage = async (file) => {
   if (!file) throw new Error("File gambar diperlukan");
 
@@ -48,7 +56,7 @@ export const uploadRewardImage = async (file) => {
   return data.publicUrl;
 };
 
-// 4. CREATE (Tambah Hadiah)
+// CREATE (Tambah Hadiah Baru)
 export const createReward = async (rewardData) => {
   // Validasi data dasar
   if (!rewardData.name || !rewardData.points_required) {
@@ -58,14 +66,13 @@ export const createReward = async (rewardData) => {
   const { data, error } = await supabase
     .from('rewards_catalog')
     .insert([rewardData])
-    .select()
-    .single();
+    .select(); // Menggunakan .select() tanpa .single() agar konsisten aman
   
   if (error) throw error;
-  return data;
+  return data?.[0];
 };
 
-// 5. UPDATE (Edit Hadiah)
+// UPDATE (Edit Hadiah)
 export const updateReward = async (id, rewardData) => {
   if (!id) throw new Error("ID Hadiah diperlukan untuk update");
 
@@ -73,14 +80,13 @@ export const updateReward = async (id, rewardData) => {
     .from('rewards_catalog')
     .update(rewardData)
     .eq('id', id)
-    .select()
-    .single();
+    .select(); // Menggunakan .select() tanpa .single()
   
   if (error) throw error;
-  return data;
+  return data?.[0];
 };
 
-// 6. DELETE (Hapus Hadiah)
+// DELETE (Hapus Hadiah)
 export const deleteReward = async (id) => {
   if (!id) throw new Error("ID Hadiah diperlukan untuk hapus");
 
@@ -92,25 +98,38 @@ export const deleteReward = async (id) => {
   if (error) throw error;
 };
 
-// 7. REDEEM (Tukar Poin - Transactional Logic)
+// ---------------------------------------------------------
+// 3. TRANSACTION (Penukaran Poin)
+// ---------------------------------------------------------
+
+// REDEEM (Tukar Poin)
+// Mencatat transaksi pengurangan poin di tabel 'transactions'
 export const redeemReward = async (rewardItem, userId) => {
-  if (!userId) throw new Error("User ID tidak ditemukan");
-  
-  // Mencatat transaksi penukaran
-  // Pastikan user_id disertakan agar policy RLS bekerja dengan benar
+  if (!userId) throw new Error("User ID tidak ditemukan. Silakan login ulang.");
+  if (!rewardItem || !rewardItem.points_required) throw new Error("Data hadiah tidak valid.");
+
+  // Pastikan poin bernilai negatif untuk pengurangan
+  const pointsDeduction = -Math.abs(Number(rewardItem.points_required));
+
   const { data, error } = await supabase
     .from('transactions')
     .insert([{
-        user_id: userId, // PENTING: Kaitkan transaksi dengan user
-        waste_name: "Tukar: " + rewardItem.name,
-        weight_kg: 0,
-        total_points: -Math.abs(rewardItem.points_required), // Pastikan negatif untuk mengurangi poin
-        status: 'Proses',
+        user_id: userId,
+        waste_name: `Penukaran: ${rewardItem.name}`, // Format nama jelas
+        waste_id: null, // Null karena ini bukan setor sampah
+        weight_kg: 0,   // Berat 0
+        total_points: pointsDeduction, // Poin negatif
+        status: 'Selesai', // Status transaksi (bisa diubah ke 'Proses' jika butuh approval admin)
+        image_url: rewardItem.image_url, // Menyimpan gambar hadiah di history transaksi
         date: new Date().toISOString()
     }])
-    .select()
-    .single();
+    .select(); // HAPUS .single() DI SINI AGAR LEBIH AMAN (Sesuai request)
 
-  if (error) throw error;
-  return data;
+  if (error) {
+    console.error("Redeem Error:", error);
+    throw new Error("Gagal memproses penukaran. Coba lagi nanti.");
+  }
+  
+  // Kembalikan item pertama dari array data
+  return data?.[0];
 };

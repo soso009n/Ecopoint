@@ -53,8 +53,16 @@ export default function CatalogForm() {
         finalImageUrl = await uploadWasteImage(selectedFile);
       }
 
-      const payload = { ...formData, image_url: finalImageUrl };
+      // 2. Siapkan Payload (Konversi String ke Number)
+      // Penting: Input HTML mengembalikan string, kita harus parse ke Float/Int untuk Database
+      const payload = { 
+          ...formData, 
+          price_per_kg: parseFloat(formData.price_per_kg),
+          point_per_kg: parseFloat(formData.point_per_kg),
+          image_url: finalImageUrl 
+      };
 
+      // 3. Kirim ke Service
       if (id) {
         await updateWaste(id, payload);
         alert("Data berhasil diperbarui!");
@@ -62,8 +70,10 @@ export default function CatalogForm() {
         await createWaste(payload);
         alert("Data baru berhasil ditambahkan!");
       }
-      navigate('/catalog');
+      
+      navigate('/catalog'); // Kembali ke halaman katalog
     } catch (error) {
+      console.error("Submit Error:", error);
       alert("Gagal: " + error.message);
     } finally {
       setLoading(false);
