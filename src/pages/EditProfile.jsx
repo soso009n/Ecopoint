@@ -8,7 +8,9 @@ import toast from 'react-hot-toast';
 export default function EditProfile() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null); 
-  const { updatePassword } = useAuth(); // Ambil fungsi update password
+  
+  // PERBAIKAN 1: Ambil object 'user' dari useAuth untuk mendapatkan ID yang pasti valid
+  const { updatePassword, user } = useAuth(); 
   
   const [formData, setFormData] = useState({ full_name: '', nim: '', jurusan: '', avatar_url: '' });
   const [passwords, setPasswords] = useState({ newPassword: '', confirmPassword: '' });
@@ -21,6 +23,7 @@ export default function EditProfile() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    // Load data profil saat halaman dibuka
     getProfile().then(data => {
       if (data) {
         setFormData(data);
@@ -30,7 +33,7 @@ export default function EditProfile() {
       setLoading(false);
     }).catch(err => {
         console.error(err);
-        toast.error("Gagal memuat profil");
+        // Jangan tampilkan toast error di sini agar UX tidak mengganggu jika profil memang kosong (pengguna baru)
         setLoading(false);
     });
   }, []);
@@ -38,7 +41,6 @@ export default function EditProfile() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validasi ukuran file (maks 2MB)
       if (file.size > 2 * 1024 * 1024) {
         return toast.error("Ukuran foto maksimal 2MB");
       }
@@ -52,6 +54,14 @@ export default function EditProfile() {
     setSaving(true);
     
     try {
+      // PERBAIKAN 2: Tentukan target ID. 
+      // Prioritaskan 'id' dari database, jika null (profil belum dibuat), gunakan 'user.id' dari sesi login.
+      const targetId = id || user?.id;
+
+      if (!targetId) {
+        throw new Error("ID Pengguna tidak ditemukan. Silakan refresh atau login ulang.");
+      }
+
       // 1. Update Password (Jika diisi)
       if (passwords.newPassword) {
         if (passwords.newPassword.length < 6) {
@@ -72,23 +82,23 @@ export default function EditProfile() {
         finalAvatarUrl = await uploadAvatar(selectedFile);
       }
 
-      // 3. Update Data Profil
-      await updateProfile(id, { 
+      // 3. Update Data Profil (Gunakan targetId yang sudah dipastikan valid)
+      // Kita tambahkan id ke dalam object data juga untuk berjaga-jaga jika menggunakan UPSERT di masa depan
+      await updateProfile(targetId, { 
+        id: targetId, // Pastikan ID ikut dikirim jika row belum ada
         ...formData, 
         avatar_url: finalAvatarUrl 
       });
 
       toast.success("Profil berhasil diperbarui!");
       
-      // Reset form password
       setPasswords({ newPassword: '', confirmPassword: '' });
-      
-      // Opsional: Navigate kembali atau tetap di halaman
       navigate('/profile');
       
     } catch (error) {
-      toast.error("Gagal: " + error.message);
-      console.error(error);
+      // Error handling yang lebih rapi
+      console.error("Save Error:", error);
+      toast.error(error.message || "Gagal menyimpan perubahan.");
     } finally {
       setSaving(false);
     }
@@ -121,7 +131,7 @@ export default function EditProfile() {
             <div className="flex flex-col items-center mb-6">
             <div className="relative cursor-pointer group" onClick={() => fileInputRef.current.click()}>
                 <img 
-                src={previewUrl || `https://ui-avatars.com/api/?name=${formData.full_name}&background=random`} 
+                src={previewUrl || `https://ui-avatars.com/api/?name=${formData.full_name || 'User'}&background=random`} 
                 className="w-24 h-24 rounded-full object-cover border-4 border-green-50 dark:border-gray-700 shadow-md transition-colors"
                 alt="Preview"
                 onError={(e) => {e.target.src = "https://via.placeholder.com/150"}}

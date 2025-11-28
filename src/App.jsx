@@ -1,15 +1,20 @@
-// src/App.jsx
-// (Referensi file asli)
-
-import { useLocation, Routes, Route } from 'react-router-dom';
+import { useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
+
+// Providers & Context
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Components
 import BottomNav from './components/BottomNav';
 import Sidebar from './components/Sidebar';
 
-// Pages (Import tetap sama...)
+// Pages - Auth
+import Login from './pages/Auth/Login';
+import Register from './pages/Auth/Register';
+
+// Pages - App
 import Home from './pages/Home';
 import Catalog from './pages/Catalog';
 import Riwayat from './pages/Riwayat';
@@ -24,53 +29,74 @@ import Achievements from './pages/Achievements';
 import AboutApp from './pages/AboutApp';
 
 function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
+
+// Pisahkan komponen konten agar bisa menggunakan useAuth/useLocation di dalamnya jika perlu
+function AppContent() {
   const location = useLocation();
 
-  const hideNavbarPaths = [
+  // Daftar path di mana Navbar/Sidebar harus DISEMBUYIKAN (Auth pages + detail pages tertentu)
+  const hideNav = ['/login', '/register'];
+  
+  // Sembunyikan jika di halaman Auth
+  const isAuthPage = hideNav.includes(location.pathname);
+
+  // Logic BottomNav (sama seperti sebelumnya + auth pages)
+  const hideBottomNavPaths = [
     '/catalog/new', '/catalog/edit', 
     '/rewards/new', '/rewards/edit', 
-    '/profile/edit', '/achievements', '/about-app'
+    '/profile/edit', '/achievements', '/about-app',
+    '/login', '/register'
   ];
-
-  // Sembunyikan BottomNav jika path detail (agar tidak menumpuk dengan tombol aksi)
-  // Tambahan logic: Sembunyikan juga jika path mengandung '/catalog/' dan ada ID (detail page)
   const isDetailPage = location.pathname.includes('/catalog/') && location.pathname.split('/').length > 2;
-  
-  const shouldShowBottomNav = !hideNavbarPaths.some(path => location.pathname.startsWith(path)) && !isDetailPage;
+  const shouldShowBottomNav = !hideBottomNavPaths.some(path => location.pathname.startsWith(path)) && !isDetailPage;
 
   return (
     <div className="min-h-screen w-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 flex flex-col md:flex-row transition-colors duration-300 font-sans">
       
       <Toaster position="top-center" reverseOrder={false} />
 
-      {/* Sidebar Desktop */}
-      <Sidebar />
+      {/* Sidebar Desktop (Hanya jika bukan halaman auth) */}
+      {!isAuthPage && <Sidebar />}
 
       {/* Main Content Area */}
-      {/* Perbaikan: Tambahkan 'max-w-screen-2xl' agar tidak terlalu lebar di layar besar */}
-      <main className="flex-1 md:ml-64 min-h-screen relative w-full overflow-x-hidden">
-        <div className="w-full max-w-5xl mx-auto md:px-8"> 
+      <main className={`flex-1 min-h-screen relative w-full overflow-x-hidden ${!isAuthPage ? 'md:ml-64' : ''}`}>
+        <div className={`w-full ${!isAuthPage ? 'max-w-5xl mx-auto md:px-8' : ''}`}> 
           
           <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>
-               {/* Route definitions tetap sama */}
-              <Route path="/" element={<Home />} />
-              <Route path="/catalog" element={<Catalog />} />
-              <Route path="/rewards" element={<Rewards />} />
-              <Route path="/history" element={<Riwayat />} />
-              <Route path="/profile" element={<Profile />} />
+              
+              {/* --- PUBLIC ROUTES --- */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-              <Route path="/catalog/new" element={<CatalogForm />} />
-              <Route path="/catalog/edit/:id" element={<CatalogForm />} />
-              <Route path="/catalog/:id" element={<CatalogDetail />} />
+              {/* --- PROTECTED ROUTES --- */}
+              <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+              <Route path="/catalog" element={<ProtectedRoute><Catalog /></ProtectedRoute>} />
+              <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
+              <Route path="/history" element={<ProtectedRoute><Riwayat /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
-              <Route path="/rewards/new" element={<RewardForm />} />
-              <Route path="/rewards/edit/:id" element={<RewardForm />} />
-              <Route path="/rewards/:id" element={<RewardDetail />} />
+              <Route path="/catalog/new" element={<ProtectedRoute><CatalogForm /></ProtectedRoute>} />
+              <Route path="/catalog/edit/:id" element={<ProtectedRoute><CatalogForm /></ProtectedRoute>} />
+              <Route path="/catalog/:id" element={<ProtectedRoute><CatalogDetail /></ProtectedRoute>} />
 
-              <Route path="/profile/edit" element={<EditProfile />} />
-              <Route path="/achievements" element={<Achievements />} />
-              <Route path="/about-app" element={<AboutApp />} />
+              <Route path="/rewards/new" element={<ProtectedRoute><RewardForm /></ProtectedRoute>} />
+              <Route path="/rewards/edit/:id" element={<ProtectedRoute><RewardForm /></ProtectedRoute>} />
+              <Route path="/rewards/:id" element={<ProtectedRoute><RewardDetail /></ProtectedRoute>} />
+
+              <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
+              <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+              <Route path="/about-app" element={<ProtectedRoute><AboutApp /></ProtectedRoute>} />
+              
+              {/* Fallback Route */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+
             </Routes>
           </AnimatePresence>
 

@@ -68,8 +68,8 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* Card Saldo */}
-        <div className="bg-gradient-to-br from-green-600 to-emerald-500 dark:from-green-700 dark:to-emerald-800 rounded-2xl p-6 text-white shadow-lg shadow-green-200 dark:shadow-none mb-8 relative overflow-hidden transition-colors">
+        {/* Card Saldo (UPDATED CLASS HERE) */}
+        <div className="bg-linear-to-br from-green-600 to-emerald-500 dark:from-green-700 dark:to-emerald-800 rounded-2xl p-6 text-white shadow-lg shadow-green-200 dark:shadow-none mb-8 relative overflow-hidden transition-colors">
           <div className="absolute top-0 right-0 opacity-10 transform translate-x-4 -translate-y-4">
             <Leaf size={120} />
           </div>
@@ -135,8 +135,6 @@ export default function Home() {
               <ChevronRight size={16} className="text-gray-300 dark:text-gray-600" />
             </div>
           </Link>
-          
-          {/* Slot untuk menu tambahan di masa mendatang (Achievement, Profile, dll) akan mengisi grid ke-3 dan ke-4 di mode desktop */}
         </div>
 
       </div>

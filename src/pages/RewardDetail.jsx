@@ -1,9 +1,8 @@
-// src/pages/RewardDetail.jsx
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getRewardById, redeemReward } from '../services/rewardService';
 import { getTransactionSummary } from '../services/transactionService'; 
+import { useAuth } from '../context/AuthContext'; // IMPORT AUTH
 import { ArrowLeft, Loader2, Coins, Tag } from 'lucide-react'; 
 import toast from 'react-hot-toast';
 import PageTransition from '../components/PageTransition';
@@ -11,6 +10,7 @@ import PageTransition from '../components/PageTransition';
 export default function RewardDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth(); // AMBIL USER
   
   // State
   const [item, setItem] = useState(null);
@@ -23,7 +23,7 @@ export default function RewardDetail() {
     const load = async () => {
       try {
         const reward = await getRewardById(id);
-        const stats = await getTransactionSummary();
+        const stats = await getTransactionSummary(); // Service ini sudah otomatis cek user login
         setItem(reward);
         setCurrentPoints(stats.totalPoints || 0);
       } catch (error) {
@@ -39,6 +39,8 @@ export default function RewardDetail() {
 
   // Handle Penukaran
   const handleRedeem = async () => {
+    if (!user) return toast.error("Silakan login untuk menukar poin");
+    
     if (currentPoints < item.points_required) {
       return toast.error("Poin Anda tidak mencukupi!");
     }
@@ -48,10 +50,11 @@ export default function RewardDetail() {
       const loadingToast = toast.loading("Memproses penukaran...");
 
       try {
-        await redeemReward(item);
-        toast.dismiss(loadingToast);
+        // Kirim User ID ke service redeemReward
+        await redeemReward(item, user.id); 
         
-        toast.success("Penukaran Berhasil! Cek halaman riwayat.", {
+        toast.dismiss(loadingToast);
+        toast.success("Penukaran Berhasil!", {
             duration: 4000,
             style: { borderRadius: '10px', background: '#333', color: '#fff' },
         });
@@ -193,7 +196,7 @@ export default function RewardDetail() {
                  }
               `}
             >
-              {processing ? <Loader2 className="animate-spin" /> : "Tukar Sekarang"}
+              {processing ? <Loader2 className="animate-spin" /> : (isAffordable ? "Tukar Sekarang" : "Poin Tidak Cukup")}
             </button>
             
           </div>

@@ -1,7 +1,7 @@
-// pages/Profile.js
 import { useEffect, useState } from 'react';
 import { getProfile } from '../services/profileService';
 import { getTransactionSummary } from '../services/transactionService';
+import { useAuth } from '../context/AuthContext'; // IMPORT PENTING
 import { User, Edit2, LogOut, Award, Info, ChevronRight, Moon, Sun } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -11,35 +11,39 @@ import { useTheme } from '../context/ThemeContext';
 export default function Profile() {
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useTheme();
+  const { user, logout } = useAuth(); // Ambil user & logout dari context
   
-  // Inisialisasi state dengan nilai default untuk mencegah layout 'lompat'
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState({ totalWeight: 0, totalTransactions: 0, totalPoints: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
+      // Pastikan ada user sebelum fetch
+      if (!user) return; 
+
       try {
-        // Jalankan request secara paralel untuk efisiensi
+        setLoading(true);
+        // Kirim user.id ke getProfile agar data yang diambil spesifik & akurat
         const [profileData, statsData] = await Promise.all([
-            getProfile(),
+            getProfile(user.id), 
             getTransactionSummary()
         ]);
         
         setProfile(profileData);
-        if (statsData) setStats(statsData); // Pastikan data ada sebelum set
+        if (statsData) setStats(statsData);
       } catch (e) {
         console.error("Gagal memuat profil:", e);
-        // Opsional: toast.error("Gagal memuat data profil");
       } finally {
         setLoading(false);
       }
     };
+
     load();
-  }, []);
+  }, [user]); // Dependency 'user' memastikan jika user berubah/refresh, data ditarik ulang
 
   const getLevel = (points) => {
-    const p = points || 0; // Fallback jika points undefined
+    const p = points || 0;
     if (p >= 5000) return { name: 'Legendary', color: 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-300 dark:border-indigo-800' };
     if (p >= 2000) return { name: 'Earth Guardian', color: 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-800' };
     if (p >= 1000) return { name: 'Sultan Sampah', color: 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-800' };
@@ -50,27 +54,32 @@ export default function Profile() {
 
   const level = getLevel(stats.totalPoints);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (window.confirm('Apakah Anda yakin ingin keluar?')) {
-      toast.success('Berhasil keluar akun');
-      // Tambahkan logika clear localStorage/token di sini jika belum ada
-      // localStorage.clear(); 
-      navigate('/');
+      try {
+        await logout(); // Gunakan fungsi logout dari AuthContext
+        toast.success('Berhasil keluar akun');
+        navigate('/login');
+      } catch (error) {
+        toast.error('Gagal keluar akun');
+      }
     }
   };
 
   if (loading) {
     return (
-        <div className="flex h-[80vh] items-center justify-center">
-            <div className="animate-pulse text-green-600 font-medium">Memuat Profil...</div>
+        <div className="flex h-[80vh] items-center justify-center bg-gray-50 dark:bg-gray-900">
+            <div className="flex flex-col items-center gap-2">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+              <span className="text-gray-500 text-sm">Memuat Profil...</span>
+            </div>
         </div>
     );
   }
 
   return (
     <PageTransition>
-      {/* Wrapper halaman, pb-24 agar tidak tertutup nav mobile */}
-      <div className="pb-24 md:pb-10 relative">
+      <div className="pb-24 md:pb-10 relative bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-300">
         
         {/* Header Background */}
         <div className="bg-green-600 dark:bg-green-800 h-48 md:h-56 rounded-b-[40px] md:rounded-b-[60px] relative transition-colors duration-300 shadow-lg shadow-green-600/20">
@@ -79,7 +88,7 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Profile Card Container - Max Width diatur untuk Desktop */}
+        {/* Profile Card Container */}
         <div className="px-6 -mt-24 relative z-10 max-w-2xl mx-auto">
           
           {/* Main Card */}
@@ -90,7 +99,9 @@ export default function Profile() {
               <img 
                 src={profile?.avatar_url || `https://ui-avatars.com/api/?name=${profile?.full_name || 'User'}&background=random`} 
                 alt="Profile"
+                key={profile?.avatar_url} // Trik React: key berubah = gambar reload (menghindari cache lama)
                 className="w-24 h-24 md:w-32 md:h-32 rounded-full border-[6px] border-white dark:border-gray-700 shadow-lg mx-auto bg-gray-200 object-cover transition-colors" 
+                onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }}
               />
               <Link to="/profile/edit" className="absolute bottom-1 right-1 bg-blue-600 text-white p-2 rounded-full shadow-lg hover:bg-blue-700 transition hover:scale-110" aria-label="Edit Profile">
                 <Edit2 size={16} />
@@ -100,8 +111,12 @@ export default function Profile() {
             <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white transition-colors">
                 {profile?.full_name || "Pengguna EcoPoint"}
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-4">
-                {profile?.nim || "-"} • {profile?.jurusan || "-"}
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-4 flex items-center justify-center gap-2">
+                <span className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-xs">
+                  {profile?.nim || "NIM Kosong"}
+                </span>
+                • 
+                <span>{profile?.jurusan || "Jurusan Kosong"}</span>
             </p>
             
             <div className={`inline-block px-5 py-2 rounded-full text-xs md:text-sm font-bold shadow-sm border ${level.color} transition-colors`}>
@@ -144,7 +159,6 @@ export default function Profile() {
                 <p className="text-[10px] text-gray-400">{isDark ? "Aktif (Hemat Baterai)" : "Nonaktif (Tampilan Terang)"}</p>
               </div>
               
-              {/* iOS Style Switch */}
               <div className={`w-11 h-6 rounded-full relative transition-colors duration-300 ${isDark ? 'bg-green-500' : 'bg-gray-300'}`}>
                  <div className={`w-5 h-5 bg-white rounded-full shadow-md absolute top-0.5 transition-transform duration-300 ${isDark ? 'translate-x-5.5 left-0.5' : 'left-0.5'}`}></div>
               </div>

@@ -1,10 +1,8 @@
-// src/pages/CatalogDetail.jsx
-// (Menggantikan konten file asli)
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getCatalogById } from '../services/wasteService';
 import { createTransaction } from '../services/transactionService'; 
+import { useAuth } from '../context/AuthContext'; // IMPORT AUTH
 import { ArrowLeft, Calculator, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PageTransition from '../components/PageTransition';
@@ -12,6 +10,8 @@ import PageTransition from '../components/PageTransition';
 export default function CatalogDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth(); // AMBIL USER
+
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [weight, setWeight] = useState(''); 
@@ -34,10 +34,14 @@ export default function CatalogDetail() {
   }, [id, navigate]);
 
   const handleSetor = async () => {
+    if (!user) return toast.error("Silakan login terlebih dahulu");
     if (!weight || parseFloat(weight) <= 0) return toast.error("Masukkan berat valid!");
+    
     setSubmitting(true);
     try {
-      await createTransaction(item, weight);
+      // Kirim user.id ke service createTransaction
+      await createTransaction(item, weight, user.id);
+      
       toast.success("Setoran berhasil!");
       navigate('/history');
     } catch (error) {

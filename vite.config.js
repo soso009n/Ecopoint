@@ -1,3 +1,4 @@
+// vite.config.js
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -17,4 +18,9 @@ export default defineConfig({
       }
     })
   ],
+  // TAMBAHKAN BAGIAN INI
+  server: {
+    host: true, // Mengizinkan akses dari IP Network (LAN)
+    port: 5173, // Port default (bisa diganti jika bentrok)
+  }
 })

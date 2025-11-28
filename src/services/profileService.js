@@ -1,9 +1,22 @@
 import { supabase } from '../config/supabaseClient';
 
-// Ambil data profil
-export const getProfile = async () => {
-  const { data, error } = await supabase.from('profiles').select('*').limit(1).single();
-  if (error) throw error;
+// Ambil data profil (Updated: Bisa terima parameter ID specific)
+export const getProfile = async (id = null) => {
+  let query = supabase.from('profiles').select('*');
+
+  // Jika ID diberikan, ambil spesifik ID tersebut
+  // Jika tidak, Supabase akan mengandalkan RLS (Row Level Security) atau mengambil baris pertama
+  if (id) {
+    query = query.eq('id', id);
+  }
+
+  const { data, error } = await query.limit(1).single();
+  
+  if (error) {
+    console.warn("Profile fetch error:", error.message);
+    return null; // Return null agar UI bisa handle graceful degradation
+  }
+  
   return data;
 };
 
@@ -28,7 +41,10 @@ export const uploadAvatar = async (file) => {
   // 2. Upload ke Supabase Storage
   const { error: uploadError } = await supabase.storage
     .from('avatars') // Nama bucket yang tadi dibuat
-    .upload(fileName, file);
+    .upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: false
+    });
 
   if (uploadError) throw uploadError;
 
