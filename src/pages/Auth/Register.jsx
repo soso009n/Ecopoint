@@ -24,22 +24,25 @@ export default function Register() {
         return;
     }
 
-    const { error } = await register(email, password, fullName);
+    // Call the fixed register function
+    const { data, error } = await register(email, password, fullName);
 
     if (error) {
       toast.error(error.message || "Gagal mendaftar.");
     } else {
-      toast.success("Pendaftaran berhasil! Silakan login.");
+      if (data?.user && !data.session) {
+        toast.success("Berhasil! Cek email untuk verifikasi.", { duration: 5000 });
+      } else {
+        toast.success("Pendaftaran berhasil! Silakan login.");
+      }
       navigate('/login');
     }
     setLoading(false);
-  };
+   };
 
   return (
     <PageTransition>
       <div className="min-h-screen flex bg-white dark:bg-gray-900 transition-colors duration-300">
-        
-        {/* Kolom Kiri: Form */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-8 order-2 lg:order-1">
           <div className="w-full max-w-md space-y-8">
             <div className="text-center lg:text-left">
@@ -101,8 +104,8 @@ export default function Register() {
             </p>
           </div>
         </div>
-
-        {/* Kolom Kanan: Gambar (Hidden di Mobile) */}
+        
+        {/* Kolom Kanan (Gambar) */}
         <div className="hidden lg:flex lg:w-1/2 bg-blue-50 dark:bg-blue-900/20 items-center justify-center relative overflow-hidden order-1 lg:order-2">
           <div className="absolute inset-0 bg-linear-to-bl from-blue-600/10 to-transparent"></div>
           <div className="z-10 text-center px-10">
@@ -112,7 +115,6 @@ export default function Register() {
             </p>
           </div>
         </div>
-
       </div>
     </PageTransition>
   );

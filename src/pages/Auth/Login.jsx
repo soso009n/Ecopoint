@@ -17,13 +17,14 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
+    // Eksekusi Login
     const { error } = await login(email, password);
 
     if (error) {
-      toast.error(error.message || "Gagal login. Periksa email/password.");
+      toast.error("Gagal login. Periksa email atau password Anda.");
     } else {
       toast.success("Selamat datang kembali!");
-      navigate('/'); // Redirect ke Dashboard
+      navigate('/'); 
     }
     setLoading(false);
   };
@@ -31,8 +32,6 @@ export default function Login() {
   return (
     <PageTransition>
       <div className="min-h-screen flex bg-white dark:bg-gray-900 transition-colors duration-300">
-        
-        {/* Kolom Kiri: Gambar/Ilustrasi (Hidden di Mobile) */}
         <div className="hidden lg:flex lg:w-1/2 bg-green-50 dark:bg-green-900/20 items-center justify-center relative overflow-hidden">
           <div className="absolute inset-0 bg-linear-to-br from-green-600/10 to-transparent"></div>
           <div className="z-10 text-center px-10">
@@ -43,7 +42,6 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Kolom Kanan: Form */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
           <div className="w-full max-w-md space-y-8">
             <div className="text-center lg:text-left">
