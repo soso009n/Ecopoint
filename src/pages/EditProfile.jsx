@@ -1,17 +1,19 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProfile, updateProfile, uploadAvatar } from '../services/profileService'; 
-import { ArrowLeft, Save, Loader2, Camera } from 'lucide-react';
+import { useAuth } from '../context/AuthContext'; // Import Auth Context
+import { ArrowLeft, Save, Loader2, Camera, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function EditProfile() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null); 
+  const { updatePassword } = useAuth(); // Ambil fungsi update password
   
   const [formData, setFormData] = useState({ full_name: '', nim: '', jurusan: '', avatar_url: '' });
+  const [passwords, setPasswords] = useState({ newPassword: '', confirmPassword: '' });
   const [id, setId] = useState(null);
   
-  // State untuk manajemen file
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   
@@ -20,16 +22,26 @@ export default function EditProfile() {
 
   useEffect(() => {
     getProfile().then(data => {
-      setFormData(data);
-      setId(data.id);
-      setPreviewUrl(data.avatar_url); 
+      if (data) {
+        setFormData(data);
+        setId(data.id);
+        setPreviewUrl(data.avatar_url);
+      }
       setLoading(false);
+    }).catch(err => {
+        console.error(err);
+        toast.error("Gagal memuat profil");
+        setLoading(false);
     });
   }, []);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validasi ukuran file (maks 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        return toast.error("Ukuran foto maksimal 2MB");
+      }
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
     }
@@ -40,19 +52,40 @@ export default function EditProfile() {
     setSaving(true);
     
     try {
-      let finalAvatarUrl = formData.avatar_url;
+      // 1. Update Password (Jika diisi)
+      if (passwords.newPassword) {
+        if (passwords.newPassword.length < 6) {
+            throw new Error("Password baru minimal 6 karakter");
+        }
+        if (passwords.newPassword !== passwords.confirmPassword) {
+            throw new Error("Konfirmasi password tidak cocok");
+        }
+        
+        const { error: passError } = await updatePassword(passwords.newPassword);
+        if (passError) throw passError;
+        toast.success("Password berhasil diubah!");
+      }
 
+      // 2. Upload Foto (Jika ada file baru)
+      let finalAvatarUrl = formData.avatar_url;
       if (selectedFile) {
         finalAvatarUrl = await uploadAvatar(selectedFile);
       }
 
+      // 3. Update Data Profil
       await updateProfile(id, { 
         ...formData, 
         avatar_url: finalAvatarUrl 
       });
 
       toast.success("Profil berhasil diperbarui!");
+      
+      // Reset form password
+      setPasswords({ newPassword: '', confirmPassword: '' });
+      
+      // Opsional: Navigate kembali atau tetap di halaman
       navigate('/profile');
+      
     } catch (error) {
       toast.error("Gagal: " + error.message);
       console.error(error);
@@ -61,77 +94,125 @@ export default function EditProfile() {
     }
   };
 
-  if (loading) return <div className="p-10 text-center dark:text-white">Memuat...</div>;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <Loader2 className="animate-spin text-green-600" />
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-300">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 pb-20 transition-colors duration-300">
+      
+      {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <button onClick={() => navigate(-1)} className="bg-white dark:bg-gray-800 dark:text-white p-2 rounded-full shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+        <button onClick={() => navigate(-1)} className="bg-white dark:bg-gray-800 dark:text-white p-2 rounded-full shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <ArrowLeft size={20}/>
         </button>
         <h1 className="text-xl font-bold text-gray-800 dark:text-white transition-colors">Edit Profil</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 space-y-5 transition-colors duration-300">
+      <form onSubmit={handleSubmit} className="space-y-6">
         
-        {/* --- AREA UPLOAD FOTO --- */}
-        <div className="flex flex-col items-center mb-6">
-          <div className="relative cursor-pointer group" onClick={() => fileInputRef.current.click()}>
-            <img 
-              src={previewUrl || "https://ui-avatars.com/api/?name=User"} 
-              className="w-28 h-28 rounded-full object-cover border-4 border-gray-100 dark:border-gray-700 shadow-md transition-colors"
-              alt="Preview"
-            />
-            <div className="absolute bottom-0 right-0 bg-blue-600 p-2 rounded-full text-white shadow-lg border-2 border-white dark:border-gray-800 group-hover:bg-blue-700 transition">
-              <Camera size={18} />
+        {/* --- SECTION 1: DATA DIRI --- */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
+            <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-4 text-sm border-b border-gray-100 dark:border-gray-700 pb-2">INFORMASI PRIBADI</h3>
+            
+            {/* Upload Foto */}
+            <div className="flex flex-col items-center mb-6">
+            <div className="relative cursor-pointer group" onClick={() => fileInputRef.current.click()}>
+                <img 
+                src={previewUrl || `https://ui-avatars.com/api/?name=${formData.full_name}&background=random`} 
+                className="w-24 h-24 rounded-full object-cover border-4 border-green-50 dark:border-gray-700 shadow-md transition-colors"
+                alt="Preview"
+                onError={(e) => {e.target.src = "https://via.placeholder.com/150"}}
+                />
+                <div className="absolute bottom-0 right-0 bg-green-600 p-2 rounded-full text-white shadow-lg border-2 border-white dark:border-gray-800 group-hover:bg-green-700 transition">
+                <Camera size={16} />
+                </div>
             </div>
-          </div>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-3 transition-colors">Ketuk foto untuk mengganti</p>
-          
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            accept="image/*" 
-            className="hidden" 
-          />
-        </div>
-        {/* ------------------------ */}
+            <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                accept="image/*" 
+                className="hidden" 
+            />
+            </div>
 
-        <div>
-          <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1 transition-colors">Nama Lengkap</label>
-          <input 
-            type="text" 
-            value={formData.full_name || ''}
-            onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-            className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500 outline-none transition-colors"
-          />
+            <div className="space-y-4">
+                <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Nama Lengkap</label>
+                    <input 
+                        type="text" 
+                        required
+                        value={formData.full_name || ''}
+                        onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                        className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500 outline-none transition-all"
+                    />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">NIM</label>
+                        <input 
+                            type="text" 
+                            value={formData.nim || ''}
+                            onChange={(e) => setFormData({...formData, nim: e.target.value})}
+                            className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500 outline-none transition-all"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Jurusan</label>
+                        <input 
+                            type="text" 
+                            value={formData.jurusan || ''}
+                            onChange={(e) => setFormData({...formData, jurusan: e.target.value})}
+                            className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500 outline-none transition-all"
+                        />
+                    </div>
+                </div>
+            </div>
         </div>
-        <div>
-          <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1 transition-colors">NIM</label>
-          <input 
-            type="text" 
-            value={formData.nim || ''}
-            onChange={(e) => setFormData({...formData, nim: e.target.value})}
-            className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500 outline-none transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1 transition-colors">Jurusan</label>
-          <input 
-            type="text" 
-            value={formData.jurusan || ''}
-            onChange={(e) => setFormData({...formData, jurusan: e.target.value})}
-            className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500 outline-none transition-colors"
-          />
+
+        {/* --- SECTION 2: KEAMANAN (GANTI PASSWORD) --- */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
+            <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-4 text-sm border-b border-gray-100 dark:border-gray-700 pb-2 flex items-center gap-2">
+                <Lock size={16}/> KEAMANAN AKUN
+            </h3>
+            
+            <div className="space-y-4">
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg text-xs text-blue-700 dark:text-blue-300 mb-2">
+                    Kosongkan jika tidak ingin mengganti password.
+                </div>
+
+                <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Password Baru</label>
+                    <input 
+                        type="password" 
+                        value={passwords.newPassword}
+                        onChange={(e) => setPasswords({...passwords, newPassword: e.target.value})}
+                        className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder-gray-400"
+                        placeholder="Minimal 6 karakter"
+                    />
+                </div>
+                <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Konfirmasi Password</label>
+                    <input 
+                        type="password" 
+                        value={passwords.confirmPassword}
+                        onChange={(e) => setPasswords({...passwords, confirmPassword: e.target.value})}
+                        className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        placeholder="Ulangi password baru"
+                    />
+                </div>
+            </div>
         </div>
 
         <button 
           type="submit" 
           disabled={saving}
-          className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-700 transition mt-6 flex justify-center items-center gap-2 disabled:bg-gray-400 dark:disabled:bg-gray-600"
+          className="w-full bg-green-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-green-600/20 hover:bg-green-700 hover:-translate-y-1 transition-all mt-6 flex justify-center items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none"
         >
-          {saving ? <Loader2 className="animate-spin"/> : <><Save size={18}/> Simpan Perubahan</>}
+          {saving ? <Loader2 className="animate-spin"/> : <><Save size={20}/> Simpan Perubahan</>}
         </button>
       </form>
     </div>
