@@ -7,7 +7,7 @@ import HomeChart from '../components/HomeChart';
 import PageTransition from '../components/PageTransition';
 
 export default function Home() {
-  const { userProfile } = useAuth(); // AMBIL PROFILE DARI CONTEXT
+  const { userProfile } = useAuth();
   const [stats, setStats] = useState({ totalPoints: 0 });
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,10 +15,14 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const summary = await getTransactionSummary();
-        setStats(summary);
-        const history = await getHistory();
-        processChartData(history);
+        // PERBAIKAN: Gunakan Promise.all untuk fetch paralel
+        const [summaryData, historyData] = await Promise.all([
+          getTransactionSummary(),
+          getHistory()
+        ]);
+
+        setStats(summaryData);
+        processChartData(historyData);
       } catch (error) {
         console.error("Gagal ambil data:", error);
       } finally {

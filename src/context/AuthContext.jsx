@@ -14,7 +14,6 @@ export function AuthProvider({ children }) {
   // GLOBAL STATE PROFILE
   const [userProfile, setUserProfile] = useState(null);
 
-  // Helper untuk refresh profile agar update foto/nama langsung terlihat
   const refreshUserProfile = async () => {
     if (!user) return;
     try {
@@ -29,47 +28,59 @@ export function AuthProvider({ children }) {
     let mounted = true;
 
     const initAuth = async () => {
-      setLoading(true);
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        setSession(session);
-        setUser(session.user);
+      try {
+        // 1. Ambil session dulu (Cepat)
+        const { data: { session } } = await supabase.auth.getSession();
         
-        try {
-            const profileData = await getProfile(session.user.id);
-            if (mounted) setUserProfile(profileData);
-        } catch (err) {
-            console.warn("Profile belum ada/gagal load", err);
-        }
-      }
-
-      if (mounted) setLoading(false);
-
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          setRole('admin'); 
-          
-          if (session?.user) {
-             const profileData = await getProfile(session.user.id);
-             setUserProfile(profileData);
-          } else {
-             setUserProfile(null);
+        if (session?.user) {
+          if (mounted) {
+            setSession(session);
+            setUser(session.user);
           }
-          setLoading(false);
-        }
-      });
 
-      return () => {
-        mounted = false;
-        subscription.unsubscribe();
-      };
+          // 2. Ambil profile secara paralel (jangan memblokir state user/session)
+          // Kita fetch profile, tapi loading diset false segera setelah session ada
+          // agar UX terasa lebih cepat (Optimistic UI)
+          getProfile(session.user.id)
+            .then(data => {
+              if (mounted) setUserProfile(data);
+            })
+            .catch(() => {
+              // Silent fail jika profile belum ada (user baru)
+              if (mounted) setUserProfile(null);
+            });
+        }
+      } catch (error) {
+        console.error("Auth Init Error:", error);
+      } finally {
+        if (mounted) setLoading(false);
+      }
     };
 
     initAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (mounted) {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setRole('admin'); 
+        
+        if (session?.user) {
+           // Fetch ulang profile saat auth state berubah
+           getProfile(session.user.id)
+             .then(data => setUserProfile(data))
+             .catch(() => setUserProfile(null));
+        } else {
+           setUserProfile(null);
+        }
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const register = async (email, password, fullName) => {
@@ -108,8 +119,6 @@ export function AuthProvider({ children }) {
     }
   };
   
-  // === FUNGSI UPDATE PASSWORD ===
-  // Menggunakan API Supabase untuk mengganti password user yg sedang login
   const updatePassword = async (newPassword) => {
     const { data, error } = await supabase.auth.updateUser({ password: newPassword });
     return { data, error };
@@ -121,11 +130,14 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={{ 
         user, session, role, isAdmin, loading, 
         userProfile, refreshUserProfile, 
-        login, register, logout, updatePassword // <-- Pastikan updatePassword ada di sini
+        login, register, logout, updatePassword 
     }}>
       {!loading ? children : (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 transition-colors">
+          <div className="flex flex-col items-center gap-3">
+             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
+             <span className="text-xs text-gray-500 animate-pulse">Memuat EcoPoint...</span>
+          </div>
         </div>
       )}
     </AuthContext.Provider>
