@@ -9,23 +9,22 @@ export default function EditProfile() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null); 
   
-  // Ambil object 'user' dari context
-  const { updatePassword, user } = useAuth(); 
+  // Ambil updatePassword & refreshUserProfile dari Context
+  const { updatePassword, user, refreshUserProfile } = useAuth(); 
   
   const [formData, setFormData] = useState({ full_name: '', nim: '', jurusan: '', avatar_url: '' });
+  
+  // State khusus untuk input password
   const [passwords, setPasswords] = useState({ newPassword: '', confirmPassword: '' });
+  
   const [id, setId] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
-  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    // Pastikan user ada sebelum fetch
     if (!user) return;
-
-    // Gunakan user.id yang pasti valid dari sesi Auth
     getProfile(user.id).then(data => {
       if (data) {
         setFormData(data);
@@ -42,9 +41,7 @@ export default function EditProfile() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        return toast.error("Ukuran foto maksimal 2MB");
-      }
+      if (file.size > 2 * 1024 * 1024) return toast.error("Ukuran foto maksimal 2MB");
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
     }
@@ -55,37 +52,41 @@ export default function EditProfile() {
     setSaving(true);
     
     try {
-      // ID Target: Prioritas ID dari DB, fallback ke user.id dari sesi
       const targetId = id || user?.id;
+      if (!targetId) throw new Error("ID Pengguna tidak valid.");
 
-      if (!targetId) {
-        throw new Error("ID Pengguna tidak valid.");
-      }
-
-      // 1. Update Password (jika diisi)
+      // === LOGIKA UPDATE PASSWORD ===
+      // Hanya dijalankan jika user mengisi kolom password baru
       if (passwords.newPassword) {
+        // 1. Validasi Panjang
         if (passwords.newPassword.length < 6) throw new Error("Password minimal 6 karakter");
+        
+        // 2. Validasi Pencocokan
         if (passwords.newPassword !== passwords.confirmPassword) throw new Error("Konfirmasi password tidak cocok");
         
+        // 3. Eksekusi ke Supabase via Context
         const { error } = await updatePassword(passwords.newPassword);
         if (error) throw error;
+        
         toast.success("Password diperbarui!");
       }
 
-      // 2. Upload Foto (jika ada)
+      // === LOGIKA UPDATE PROFIL & AVATAR ===
       let finalAvatarUrl = formData.avatar_url;
       if (selectedFile) {
         finalAvatarUrl = await uploadAvatar(selectedFile);
       }
 
-      // 3. Update Profil
       await updateProfile(targetId, { 
         id: targetId,
         ...formData, 
         avatar_url: finalAvatarUrl 
       });
 
-      toast.success("Data profil berhasil disimpan!");
+      // Update Global State agar Home/Sidebar berubah
+      await refreshUserProfile();
+
+      toast.success("Profil berhasil disimpan!");
       navigate('/profile');
       
     } catch (error) {
@@ -112,9 +113,9 @@ export default function EditProfile() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        
+        {/* SECTION 1: DATA DIRI & FOTO */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-4 text-sm border-b border-gray-100 dark:border-gray-700 pb-2">INFORMASI PRIBADI</h3>
-            
             <div className="flex flex-col items-center mb-6">
                 <div className="relative cursor-pointer group" onClick={() => fileInputRef.current.click()}>
                     <img 
@@ -132,38 +133,26 @@ export default function EditProfile() {
             <div className="space-y-4">
                 <div>
                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Nama Lengkap</label>
-                    <input 
-                        type="text" required value={formData.full_name || ''}
-                        onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                        className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500 outline-none"
-                    />
+                    <input type="text" required value={formData.full_name || ''} onChange={(e) => setFormData({...formData, full_name: e.target.value})} className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">NIM</label>
-                        <input 
-                            type="text" value={formData.nim || ''}
-                            onChange={(e) => setFormData({...formData, nim: e.target.value})}
-                            className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500 outline-none"
-                        />
+                        <input type="text" value={formData.nim || ''} onChange={(e) => setFormData({...formData, nim: e.target.value})} className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" />
                     </div>
                     <div>
                         <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Jurusan</label>
-                        <input 
-                            type="text" value={formData.jurusan || ''}
-                            onChange={(e) => setFormData({...formData, jurusan: e.target.value})}
-                            className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500 outline-none"
-                        />
+                        <input type="text" value={formData.jurusan || ''} onChange={(e) => setFormData({...formData, jurusan: e.target.value})} className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500 outline-none" />
                     </div>
                 </div>
             </div>
         </div>
 
+        {/* SECTION 2: UPDATE PASSWORD (KEAMANAN) */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
             <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-4 text-sm border-b border-gray-100 dark:border-gray-700 pb-2 flex items-center gap-2">
                 <Lock size={16}/> KEAMANAN AKUN
             </h3>
-            
             <div className="space-y-4">
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg text-xs text-blue-700 dark:text-blue-300 mb-2">
                     Kosongkan jika tidak ingin mengganti password.
@@ -171,19 +160,21 @@ export default function EditProfile() {
                 <div>
                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Password Baru</label>
                     <input 
-                        type="password" value={passwords.newPassword}
-                        onChange={(e) => setPasswords({...passwords, newPassword: e.target.value})}
-                        className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder="Minimal 6 karakter"
+                        type="password" 
+                        value={passwords.newPassword} 
+                        onChange={(e) => setPasswords({...passwords, newPassword: e.target.value})} 
+                        className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                        placeholder="Minimal 6 karakter" 
                     />
                 </div>
                 <div>
                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Konfirmasi Password</label>
                     <input 
-                        type="password" value={passwords.confirmPassword}
-                        onChange={(e) => setPasswords({...passwords, confirmPassword: e.target.value})}
-                        className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder="Ulangi password baru"
+                        type="password" 
+                        value={passwords.confirmPassword} 
+                        onChange={(e) => setPasswords({...passwords, confirmPassword: e.target.value})} 
+                        className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" 
+                        placeholder="Ulangi password baru" 
                     />
                 </div>
             </div>

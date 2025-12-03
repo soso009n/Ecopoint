@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../config/supabaseClient';
-import { getProfile } from '../services/profileService';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
@@ -8,20 +7,26 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
-  const [role, setRole] = useState('admin'); 
+  const [role, setRole] = useState(null); // State untuk menyimpan Role
   const [loading, setLoading] = useState(true);
-  
-  // GLOBAL STATE PROFILE
-  const [userProfile, setUserProfile] = useState(null);
 
-  // Helper untuk refresh profile agar update foto/nama langsung terlihat
-  const refreshUserProfile = async () => {
-    if (!user) return;
+  // Helper untuk ambil role dari tabel profiles
+  const fetchRole = async (userId) => {
     try {
-      const data = await getProfile(user.id);
-      setUserProfile(data);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.warn("Gagal ambil role (mungkin user baru):", error.message);
+        return 'user';
+      }
+      return data?.role || 'user';
     } catch (error) {
-      console.error("Gagal refresh profile:", error);
+      console.error("Error fetching role:", error);
+      return 'user';
     }
   };
 
@@ -31,33 +36,30 @@ export function AuthProvider({ children }) {
     const initAuth = async () => {
       setLoading(true);
       
+      // 1. Cek sesi saat ini
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
         setSession(session);
         setUser(session.user);
-        
-        try {
-            const profileData = await getProfile(session.user.id);
-            if (mounted) setUserProfile(profileData);
-        } catch (err) {
-            console.warn("Profile belum ada/gagal load", err);
-        }
+        const userRole = await fetchRole(session.user.id);
+        if (mounted) setRole(userRole);
       }
 
       if (mounted) setLoading(false);
 
+      // 2. Listener perubahan auth
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
         if (mounted) {
           setSession(session);
           setUser(session?.user ?? null);
-          setRole('admin'); 
           
           if (session?.user) {
-             const profileData = await getProfile(session.user.id);
-             setUserProfile(profileData);
+            // Fetch role ulang saat login/switch account
+            const userRole = await fetchRole(session.user.id);
+            setRole(userRole);
           } else {
-             setUserProfile(null);
+            setRole(null);
           }
           setLoading(false);
         }
@@ -77,7 +79,9 @@ export function AuthProvider({ children }) {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { full_name: fullName, role: 'admin' } },
+        options: {
+          data: { full_name: fullName }, // Role dihandle oleh Trigger SQL
+        },
       });
       if (error) throw error;
       return { data, error: null };
@@ -88,7 +92,10 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
@@ -98,31 +105,22 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     const { error } = await supabase.auth.signOut();
-    if (error) {
-        toast.error(error.message);
-    } else {
+    if (error) toast.error(error.message);
+    else {
         setRole(null);
         setUser(null);
-        setUserProfile(null);
-        setSession(null);
     }
   };
   
-  // === FUNGSI UPDATE PASSWORD ===
-  // Menggunakan API Supabase untuk mengganti password user yg sedang login
   const updatePassword = async (newPassword) => {
     const { data, error } = await supabase.auth.updateUser({ password: newPassword });
     return { data, error };
   };
 
-  const isAdmin = true; 
+  const isAdmin = role === 'admin';
 
   return (
-    <AuthContext.Provider value={{ 
-        user, session, role, isAdmin, loading, 
-        userProfile, refreshUserProfile, 
-        login, register, logout, updatePassword // <-- Pastikan updatePassword ada di sini
-    }}>
+    <AuthContext.Provider value={{ user, session, role, isAdmin, loading, login, register, logout, updatePassword }}>
       {!loading ? children : (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
@@ -132,6 +130,7 @@ export function AuthProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   return useContext(AuthContext);
 };

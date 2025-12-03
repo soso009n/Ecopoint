@@ -8,14 +8,17 @@ export default function ProtectedRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <Loader2 className="animate-spin text-green-600 h-8 w-8" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+        <Loader2 className="animate-spin text-green-600 h-10 w-10 mb-2" />
+        <span className="text-gray-500 dark:text-gray-400 text-sm font-medium animate-pulse">
+          Memuat akses...
+        </span>
       </div>
     );
   }
 
   // Jika tidak ada user, redirect ke login
-  // `state={{ from: location }}` berguna untuk redirect balik setelah login (UX yang bagus)
+  // `state={{ from: location }}` berguna agar setelah login user dikembalikan ke halaman yang tadi dia coba buka
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }

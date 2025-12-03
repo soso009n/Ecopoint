@@ -1,65 +1,92 @@
-// components/Sidebar.js
-import { Home, List, History, User, Gift, LogOut } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'; // Import useNavigate
+import { Home, List, Gift, History, User, LogOut, Leaf } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 export default function Sidebar() {
+  const { logout, userProfile } = useAuth();
+  const navigate = useNavigate(); // Inisialisasi Hook
   const location = useLocation();
-  
-  // Helper function untuk styling active state
-  const getLinkClass = (path) => {
-    // Cek apakah path sama persis ATAU path dimulai dengan path menu (untuk sub-menu)
-    // Kecuali home ('/') yang harus exact match
-    const isActive = path === '/' 
-      ? location.pathname === '/' 
-      : location.pathname.startsWith(path);
 
-    const baseClass = "flex items-center gap-3 px-6 py-3.5 text-sm font-medium transition-all duration-200 rounded-r-full mr-4";
-    const activeClass = "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-l-4 border-green-600 dark:border-green-500 shadow-sm";
-    const inactiveClass = "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200 border-l-4 border-transparent";
-
-    return `${baseClass} ${isActive ? activeClass : inactiveClass}`;
+  // --- FUNGSI LOGOUT YANG DIPERBAIKI ---
+  const handleLogout = async () => {
+    if (window.confirm('Keluar dari aplikasi?')) {
+      await logout();
+      
+      // Redirect Paksa ke Login
+      navigate('/login', { replace: true });
+      
+      toast.success('Sampai jumpa!');
+    }
   };
 
+  const navItems = [
+    { name: 'Beranda', icon: <Home size={20} />, path: '/' },
+    { name: 'Katalog Sampah', icon: <List size={20} />, path: '/catalog' },
+    { name: 'Tukar Poin', icon: <Gift size={20} />, path: '/rewards' },
+    { name: 'Riwayat', icon: <History size={20} />, path: '/history' },
+    { name: 'Profil Saya', icon: <User size={20} />, path: '/profile' },
+  ];
+
   return (
-    // Hidden di mobile, Flex di desktop (md)
-    <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-gray-900 h-screen fixed left-0 top-0 border-r border-gray-200 dark:border-gray-800 z-50 transition-colors duration-300">
+    <aside className="hidden md:flex flex-col w-64 h-screen bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 fixed left-0 top-0 z-50 transition-colors duration-300">
       
       {/* Logo Area */}
-      <div className="p-6 flex items-center gap-3 h-20">
-        <div className="w-9 h-9 bg-green-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-green-600/20">
-          E
+      <div className="p-6 flex items-center gap-3">
+        <div className="bg-green-600 p-2 rounded-xl text-white shadow-lg shadow-green-200 dark:shadow-none">
+          <Leaf size={24} />
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-gray-800 dark:text-white tracking-tight leading-none">EcoPoint</h1>
-          <span className="text-[10px] text-green-600 font-medium tracking-wider">BANK SAMPAH</span>
-        </div>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white tracking-tight">
+          Eco<span className="text-green-600">Point</span>
+        </h1>
       </div>
 
-      {/* Menu Items */}
-      <nav className="flex-1 py-4 space-y-1 overflow-y-auto custom-scrollbar">
-        <Link to="/" className={getLinkClass('/')}>
-          <Home size={20} /> Beranda
-        </Link>
-        <Link to="/catalog" className={getLinkClass('/catalog')}>
-          <List size={20} /> Katalog Sampah
-        </Link>
-        <Link to="/rewards" className={getLinkClass('/rewards')}>
-          <Gift size={20} /> Tukar Poin
-        </Link>
-        <Link to="/history" className={getLinkClass('/history')}>
-          <History size={20} /> Riwayat
-        </Link>
-        <Link to="/profile" className={getLinkClass('/profile')}>
-          <User size={20} /> Profil Saya
-        </Link>
+      {/* Navigation */}
+      <nav className="flex-1 px-4 space-y-2 mt-4">
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 font-medium ${
+                isActive
+                  ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200'
+              }`}
+            >
+              {item.icon}
+              <span>{item.name}</span>
+            </NavLink>
+          );
+        })}
       </nav>
 
-      {/* Footer Sidebar */}
-      <div className="p-4 border-t border-gray-100 dark:border-gray-800">
-        <div className="bg-green-50 dark:bg-green-900/10 p-4 rounded-xl border border-green-100 dark:border-green-900/20">
-          <p className="text-xs text-green-700 dark:text-green-400 font-bold mb-1">EcoPoint Web v1.0</p>
-          <p className="text-[10px] text-green-600/70 dark:text-green-500/60">© 2025 Tugas Akhir PPB</p>
+      {/* User Footer */}
+      <div className="p-4 border-t border-gray-100 dark:border-gray-700">
+        <div className="flex items-center gap-3 mb-4 px-2">
+          <img
+            src={userProfile?.avatar_url || "https://ui-avatars.com/api/?name=User&background=random"}
+            alt="User"
+            className="w-10 h-10 rounded-full object-cover border-2 border-green-100 dark:border-gray-600"
+          />
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm font-bold text-gray-800 dark:text-white truncate">
+              {userProfile?.full_name || 'Pengguna'}
+            </h4>
+            <p className="text-xs text-gray-400 truncate">
+              {userProfile?.nim || 'Eco Warrior'}
+            </p>
+          </div>
         </div>
+
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center justify-center gap-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2.5 rounded-xl transition text-sm font-medium"
+        >
+          <LogOut size={18} />
+          <span>Keluar</span>
+        </button>
       </div>
     </aside>
   );
