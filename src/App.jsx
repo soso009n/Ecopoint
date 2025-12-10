@@ -53,7 +53,10 @@ function AppContent() {
     '/profile/edit', '/achievements', '/about-app',
     '/login', '/register'
   ];
-  const isDetailPage = location.pathname.includes('/catalog/') && location.pathname.split('/').length > 2;
+
+  // --- PERBAIKAN LOGIC (Tambahkan rewards agar bottom nav hilang) ---
+  const isDetailPage = (location.pathname.includes('/catalog/') || location.pathname.includes('/rewards/')) && location.pathname.split('/').length > 2;
+  
   const shouldShowBottomNav = !hideBottomNavPaths.some(path => location.pathname.startsWith(path)) && !isDetailPage;
 
   return (

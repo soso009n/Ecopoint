@@ -18,11 +18,10 @@ export default function RewardDetail() {
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    // Fungsi load digabung agar lebih rapi
     const loadData = async () => {
       try {
         setLoading(true);
-        // Promise.all agar fetch berjalan paralel (lebih cepat)
+        // Load data hadiah & saldo poin user secara bersamaan
         const [rewardData, statsData] = await Promise.all([
           getRewardById(id),
           getTransactionSummary()
@@ -51,7 +50,7 @@ export default function RewardDetail() {
         return;
     }
     
-    // Validasi Poin di sisi Client
+    // Validasi Poin
     if (currentPoints < item.points_required) {
       toast.error("Poin Anda tidak mencukupi!", { icon: '🚫' });
       return;
@@ -91,10 +90,12 @@ export default function RewardDetail() {
 
   if (!item) return null;
 
+  // Cek apakah saldo cukup
   const isAffordable = currentPoints >= item.points_required;
 
   return (
     <PageTransition>
+      {/* Container utama dengan padding bottom ekstra untuk mobile */}
       <div className="min-h-screen bg-white dark:bg-gray-900 pb-32 md:pb-10 relative transition-colors duration-300">
         
         {/* Header Navigation */}
@@ -144,7 +145,7 @@ export default function RewardDetail() {
                     <span className="text-lg text-gray-500 font-medium">Poin</span>
                 </div>
 
-                {/* Saldo Check */}
+                {/* Saldo Check Card */}
                 <div className={`p-4 rounded-xl border flex items-center justify-between ${
                     isAffordable 
                     ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300' 
@@ -174,7 +175,7 @@ export default function RewardDetail() {
                     </p>
                 </div>
 
-                {/* Desktop Button */}
+                {/* DESKTOP BUTTON (Hidden on Mobile) */}
                 <button 
                     onClick={handleRedeem}
                     disabled={processing || !isAffordable}
@@ -191,7 +192,7 @@ export default function RewardDetail() {
             </div>
         </div>
 
-        {/* Mobile Fixed Button */}
+        {/* --- MOBILE FIXED BUTTON (STICKY FOOTER) --- */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 p-4 z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
             <button 
               onClick={handleRedeem}
